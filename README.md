@@ -63,9 +63,6 @@ npx playwright install chromium firefox webkit
 | `npm run test:e2e:report` | Opens the latest local Playwright HTML report. |
 | `npm run test:visual` | Compares the landing against the approved visual baselines. |
 | `npm run test:visual:update` | Replaces visual baselines after an intentional, reviewed visual change. |
-| `npm run figma:bridge:build` | Builds the local Codex–Figma typography bridge. |
-| `npm run figma:bridge:check` | Type-checks, tests, and builds the local bridge. |
-| `npm run figma:bridge:start` | Starts the built bridge over MCP STDIO. |
 
 For documentation-only changes, run:
 
@@ -167,10 +164,8 @@ After a Playwright run, `npm run lint` must continue to pass even when local rep
 | `src/lib/` | Shared data and utilities, including the landing page's structured content. |
 | `public/` | Static assets consumed at runtime, including brand, icon, and photography files. |
 | `docs/` | Supporting technical documentation and decisions. |
-| `tools/mat-figma-bridge/` | Local MCP server and Figma Desktop plugin for font-safe typography operations. |
 
 ## Additional documentation
 
 - [Design system](docs/design-system.md)
-- [Local Codex–Figma bridge](docs/figma-local-bridge.md)
 - [Repository conventions](AGENTS.md)
