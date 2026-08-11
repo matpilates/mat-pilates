@@ -30,6 +30,8 @@ jobs:
         run: npm ci
       - name: Run linters
         run: npm run lint
+      - name: Test CI metrics reporter
+        run: npm run test:ci-metrics
       - name: Build production application
         run: npm run build
 
