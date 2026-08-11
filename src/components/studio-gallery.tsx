@@ -217,6 +217,7 @@ export function StudioGallery({ images }: StudioGalleryProps) {
           const isCurrentImage = imageIndex === currentIndex;
           const isOutgoingImage = imageIndex === outgoingIndex;
           const isIncomingImage = imageIndex === incomingIndex;
+          const shouldAnimateSlide = isCurrentImage || isOutgoingImage;
           const targetX =
             isIncomingImage && !isTransitionReady
               ? `${direction * 100}%`
@@ -246,13 +247,13 @@ export function StudioGallery({ images }: StudioGalleryProps) {
                 zIndex: isCurrentImage ? 2 : isOutgoingImage ? 1 : 0,
               }}
               transition={
-                isIncomingImage && !isTransitionReady
-                  ? { duration: 0 }
-                  : getMatMotionTransition(
+                shouldAnimateSlide
+                  ? getMatMotionTransition(
                       MAT_MOTION_DURATION.gallery,
                       prefersReducedMotion,
                       MAT_MOTION_EASE.slide,
                     )
+                  : { duration: 0 }
               }
             >
               <Image
