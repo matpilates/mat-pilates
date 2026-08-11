@@ -55,6 +55,7 @@ npx playwright install chromium firefox webkit
 | `npm run test:e2e:functional` | Runs the 35 structural and interaction cases in Chromium without visual snapshots. |
 | `npm run test:e2e:browser-critical` | Runs the 11 critical scenarios in Firefox and WebKit (22 executions). |
 | `npm run test:gallery` | Runs the focused studio-gallery functional scenarios in Chromium. |
+| `npm run test:ci-metrics` | Runs the focused regression coverage for the weekly CI metrics reporter. |
 | `npm run test:e2e:smoke` | Runs the 2 public smoke scenarios in Chromium, Firefox, and WebKit (6 executions). |
 | `npm run test:e2e:cross-browser` | Runs all 35 functional scenarios in Chromium, Firefox, and WebKit (105 executions). |
 | `npm run test:e2e:full` | Runs the complete 114-execution matrix, including visual coverage. |
