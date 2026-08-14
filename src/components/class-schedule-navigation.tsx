@@ -32,6 +32,8 @@ interface ClassScheduleNavigationValue {
 
 const ClassScheduleNavigationContext = createContext<ClassScheduleNavigationValue | null>(null);
 const scheduleFocusTimeout = 1000;
+// The sticky selection context settles one paint after it mounts, so align once more.
+const scheduleScrollPassCount = 2;
 
 function findVisibleScheduleLink(classId: ClassId) {
   const schedule = document.getElementById("horarios");
@@ -68,6 +70,7 @@ function moveToSchedule(classId: ClassId) {
     const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
       ? "auto"
       : "smooth";
+    const block = window.matchMedia("(min-width: 1024px)").matches ? "start" : "center";
 
     if (dayDisclosure) {
       openAnimatedDisclosure(dayDisclosure);
@@ -75,6 +78,7 @@ function moveToSchedule(classId: ClassId) {
 
     const focusDeadline = performance.now() + scheduleFocusTimeout;
     let scrolledTarget: HTMLAnchorElement | null = null;
+    let scrollPasses = 0;
     const focusWhenInteractive = () => {
       const currentTarget = findVisibleScheduleLink(classId);
       const currentDisclosure = currentTarget?.closest<HTMLDetailsElement>(".mat-schedule-day");
@@ -89,8 +93,18 @@ function moveToSchedule(classId: ClassId) {
 
       if (currentTarget && isInteractive) {
         if (scrolledTarget !== currentTarget) {
-          currentTarget.scrollIntoView({ behavior, block: "center" });
           scrolledTarget = currentTarget;
+          scrollPasses = 0;
+        }
+
+        if (scrollPasses < scheduleScrollPassCount) {
+          currentTarget.scrollIntoView({ behavior, block });
+          scrollPasses += 1;
+
+          if (scrollPasses < scheduleScrollPassCount) {
+            window.requestAnimationFrame(focusWhenInteractive);
+            return;
+          }
         }
 
         currentTarget.focus({ preventScroll: true });
@@ -165,10 +179,17 @@ export function ScheduleSelectionStatus({
   const prefersReducedMotion = useMatReducedMotion();
 
   const clearAndFocusHeading = () => {
+    const schedule = document.getElementById("horarios");
+    const heading = schedule?.querySelector<HTMLElement>("h2");
+
     clearSelection();
 
     window.requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>("#horarios h2")?.focus({ preventScroll: true });
+      schedule?.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+      heading?.focus({ preventScroll: true });
     });
   };
 

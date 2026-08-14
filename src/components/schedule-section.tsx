@@ -55,11 +55,12 @@ export function ScheduleSection({ content, schedule }: ScheduleSectionProps) {
             {content.title}
           </h2>
         </div>
-        <ScheduleSelectionStatus
-          clearLabel={content.clearSelectionLabel}
-          selectionPrefix={content.selectionPrefix}
-        />
       </div>
+
+      <ScheduleSelectionStatus
+        clearLabel={content.clearSelectionLabel}
+        selectionPrefix={content.selectionPrefix}
+      />
 
       <div aria-label="Horarios semanales por día" className="mat-schedule__mobile">
         <ScheduleAccordion timezone={schedule.timezone} />
