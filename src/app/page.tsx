@@ -29,8 +29,9 @@ export default function HomePage() {
         id="mat-pilates-structured-data"
         type="application/ld+json"
       />
-      <SiteHeader />
-      <main>
+      <ClassScheduleNavigationProvider>
+        <SiteHeader />
+        <main>
         <section className="mat-hero mat-scroll-target" id="inicio">
           <div className="mat-hero__copy">
             <p className="mat-label">{hero.eyebrow}</p>
@@ -79,7 +80,9 @@ export default function HomePage() {
 
         <section aria-label="Manifiesto de MAT" className="mat-manifesto">
           <p className="mat-manifesto__title">
-            <span className="sr-only">{manifesto.concepts.join(" · ")}.</span>
+            <span className="mat-manifesto__static sr-only">
+              {manifesto.concepts.join(" · ")}.
+            </span>
             <span aria-hidden="true" className="mat-manifesto__track">
               {[0, 1].map((group) => (
                 <span className="mat-manifesto__group" key={group}>
@@ -124,7 +127,6 @@ export default function HomePage() {
           <p className="mat-body-small mat-hot-mat__closing">{hotMat.closing}</p>
         </section>
 
-        <ClassScheduleNavigationProvider>
           <section className="mat-classes mat-scroll-target" id="clases">
             <div className="mat-section-heading mat-classes__heading">
               <div className="mat-section-heading__title">
@@ -157,7 +159,6 @@ export default function HomePage() {
           </section>
 
           <ScheduleSection content={schedule} schedule={weeklySchedule} />
-        </ClassScheduleNavigationProvider>
 
         <section className="mat-studio mat-scroll-target" id="estudio">
           <div className="mat-studio__visual">
@@ -211,7 +212,8 @@ export default function HomePage() {
             />
           </div>
         </section>
-      </main>
+        </main>
+      </ClassScheduleNavigationProvider>
       <SiteFooter />
       <WhatsAppButton />
     </MatMotionProvider>

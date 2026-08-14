@@ -6,6 +6,7 @@ import { AnimatedDisclosure } from "@/components/animated-disclosure";
 import { useClassScheduleNavigation } from "@/components/class-schedule-navigation";
 import {
   classIntensityLabels,
+  getClassInformationWhatsappUrl,
   getClassWhatsappUrl,
   landingContent,
   landingCtas,
@@ -26,6 +27,17 @@ interface ClassCardProps {
 export function ClassCard({ classOffering, scheduleDays }: ClassCardProps) {
   const { showSchedule } = useClassScheduleNavigation();
   const isHot = classOffering.environment === "hot";
+  const primaryCta = classOffering.isActive
+    ? {
+        ariaLabel: `Quiero la experiencia ${classOffering.name}`,
+        href: getClassWhatsappUrl(classOffering.name),
+        label: landingCtas.selectExperience.label,
+      }
+    : {
+        ariaLabel: `Quiero información sobre ${classOffering.name}`,
+        href: getClassInformationWhatsappUrl(classOffering.name),
+        label: landingCtas.requestInformation.label,
+      };
   const titleLabel = isHot ? `${classOffering.name}, con calor` : classOffering.name;
   const titleViewportRef = useRef<HTMLSpanElement>(null);
   const titleMeasureRef = useRef<HTMLSpanElement>(null);
@@ -137,7 +149,7 @@ export function ClassCard({ classOffering, scheduleDays }: ClassCardProps) {
       <div className="mat-disclosure__expansion">
         <div className="mat-disclosure__body mat-class-card__details">
           <p className="mat-body-small">{classOffering.description}</p>
-          {scheduleDays.length > 0 ? (
+          {classOffering.isActive ? (
             <div className="mat-class-card__schedule">
               <p className="mat-label">{landingContent.classes.scheduleLabel}</p>
               <dl className="mat-class-card__schedule-days">
@@ -160,15 +172,15 @@ export function ClassCard({ classOffering, scheduleDays }: ClassCardProps) {
             </div>
           ) : null}
           <Button
-            ariaLabel={`Quiero la experiencia ${classOffering.name}`}
+            ariaLabel={primaryCta.ariaLabel}
             className="mat-class-card__cta"
-            href={getClassWhatsappUrl(classOffering.name)}
+            href={primaryCta.href}
             rel="noreferrer"
             target="_blank"
           >
-            {landingCtas.selectExperience.label}
+            {primaryCta.label}
           </Button>
-          {scheduleDays.length > 0 ? (
+          {classOffering.isActive ? (
             <Button
               ariaLabel={`${landingContent.classes.viewScheduleLabel} de ${classOffering.name}`}
               className="mat-text-button mat-class-card__cta mat-class-card__schedule-link"

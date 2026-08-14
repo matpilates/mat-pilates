@@ -66,6 +66,29 @@ test.describe("@visual landing snapshots", () => {
         mask: [page.locator(".mat-studio__map")],
         maskColor: "#e1d6c7",
       });
+
+      if (viewport.id === "mobile-min") {
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await expect
+          .poll(() => page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches))
+          .toBe(true);
+        await page.evaluate(
+          () =>
+            new Promise<void>((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+            ),
+        );
+
+        await expect(page.locator(".mat-manifesto")).toHaveScreenshot(
+          "mobile-min-reduced-motion-manifesto.png",
+          { animations: "disabled" },
+        );
+        await expect(
+          page.locator("#clase-hot-pilates-stretch > summary"),
+        ).toHaveScreenshot("mobile-min-reduced-motion-class-title.png", {
+          animations: "disabled",
+        });
+      }
     });
   }
 

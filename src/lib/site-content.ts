@@ -32,6 +32,9 @@ export const landingCtas = {
   selectExperience: {
     label: "Quiero esta experiencia",
   },
+  requestInformation: {
+    label: "Quiero información",
+  },
   learnHotMat: {
     href: "#hotmat",
     label: "¿Qué es Hot Mat?",
@@ -45,8 +48,13 @@ export function getClassWhatsappUrl(className: string) {
   return whatsappUrlWithMessage(`Hola, quiero sumarme a MAT. Me interesa ${className}.`);
 }
 
+export function getClassInformationWhatsappUrl(className: string) {
+  return whatsappUrlWithMessage(`Hola, quiero información sobre ${className}.`);
+}
+
 export interface ClassOffering {
   id: string;
+  isActive: boolean;
   name: string;
   tagline: string;
   description: string;
@@ -141,7 +149,6 @@ export const landingContent = {
     description: "Todas las clases están pensadas para trabajar con presencia y progresión.",
     scheduleLabel: "Horarios",
     viewScheduleLabel: "Ver horarios",
-    noScheduleLabel: "Sin horarios publicados",
   },
   schedule: {
     eyebrow: "Semana",
@@ -176,6 +183,7 @@ export const landingContent = {
 export const classCatalog = [
   {
     id: "hot-sculpt",
+    isActive: true,
     name: "HOT SCULPT",
     tagline: "Esculpí, fortalecé y tonificá.",
     description:
@@ -185,6 +193,7 @@ export const classCatalog = [
   },
   {
     id: "hot-pilates-stretch",
+    isActive: true,
     name: "HOT PILATES & STRETCH",
     tagline: "Fuerza y flexibilidad en equilibrio.",
     description:
@@ -194,6 +203,7 @@ export const classCatalog = [
   },
   {
     id: "yoga",
+    isActive: false,
     name: "YOGA",
     tagline: "Movimiento, respiración y conexión.",
     description:
@@ -203,6 +213,7 @@ export const classCatalog = [
   },
   {
     id: "hot-mat-burn",
+    isActive: true,
     name: "HOT MAT BURN",
     tagline: "Máxima intensidad. Máximos resultados.",
     description:
@@ -212,6 +223,7 @@ export const classCatalog = [
   },
   {
     id: "mat-pilates",
+    isActive: true,
     name: "MAT PILATES",
     tagline: "El método clásico, sin calor.",
     description:
@@ -221,6 +233,7 @@ export const classCatalog = [
   },
   {
     id: "hot-booty",
+    isActive: true,
     name: "HOT BOOTY",
     tagline: "Glúteos fuertes. Piernas potentes.",
     description:
@@ -230,6 +243,7 @@ export const classCatalog = [
   },
   {
     id: "hot-sweat",
+    isActive: true,
     name: "HOT & SWEAT",
     tagline: "Movete. Transpirá. Superate.",
     description:
@@ -239,6 +253,7 @@ export const classCatalog = [
   },
   {
     id: "abs-on",
+    isActive: true,
     name: "ABS ON",
     tagline: "Core activado de principio a fin.",
     description:
@@ -248,6 +263,7 @@ export const classCatalog = [
   },
   {
     id: "stretch-glow",
+    isActive: true,
     name: "STRETCH GLOW",
     tagline: "Movilidad, relajación y bienestar.",
     description:
@@ -257,6 +273,7 @@ export const classCatalog = [
   },
   {
     id: "sculpt-flow",
+    isActive: true,
     name: "SCULPT & FLOW",
     tagline: "Fuerza con movimiento fluido.",
     description:
@@ -266,6 +283,7 @@ export const classCatalog = [
   },
   {
     id: "stretching",
+    isActive: true,
     name: "STRETCHING",
     tagline: "Flexibilidad y recuperación.",
     description:

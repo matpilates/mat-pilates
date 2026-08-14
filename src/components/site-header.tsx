@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { AnimatePresence, m } from "motion/react";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { useClassScheduleNavigation } from "@/components/class-schedule-navigation";
 import {
   getMatMotionTransition,
   MAT_MOTION_DISTANCE,
@@ -13,6 +14,7 @@ import { landingCtas, navigationItems, siteContact } from "@/lib/site-content";
 import { Button } from "./button";
 
 export function SiteHeader() {
+  const { clearSelection } = useClassScheduleNavigation();
   const prefersReducedMotion = useMatReducedMotion();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuPresent, setIsMenuPresent] = useState(false);
@@ -64,6 +66,10 @@ export function SiteHeader() {
     menuDestinationRef.current = null;
 
     if (destination) {
+      if (destination.href !== "#horarios") {
+        clearSelection();
+      }
+
       window.history.pushState(null, "", destination.href);
       const frame = window.requestAnimationFrame(() => {
         destination.section.scrollIntoView({ block: "start" });
@@ -76,7 +82,7 @@ export function SiteHeader() {
     if (!window.matchMedia("(min-width: 1024px)").matches) {
       menuButtonRef.current?.focus();
     }
-  }, [isMenuPresent]);
+  }, [clearSelection, isMenuPresent]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
