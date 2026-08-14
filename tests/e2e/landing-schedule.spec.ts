@@ -127,37 +127,38 @@ test(
     await page.setViewportSize({ width: 390, height: 844 });
     await openLanding(page);
 
-    const hotSculptCard = page.locator("#clase-hot-sculpt");
-    await hotSculptCard.locator("summary").click();
+    const hotBootyCard = page.locator("#clase-hot-booty");
+    await hotBootyCard.locator("summary").click();
     await page.evaluate(() => {
       const originalScrollIntoView = Element.prototype.scrollIntoView;
 
       Element.prototype.scrollIntoView = function scrollIntoView(options) {
-        (window as Window & { matLastScrollBehavior?: ScrollBehavior }).matLastScrollBehavior =
-          typeof options === "object" ? options.behavior : undefined;
+        (window as Window & { matLastScheduleScroll?: ScrollIntoViewOptions })
+          .matLastScheduleScroll = typeof options === "object" ? options : undefined;
         originalScrollIntoView.call(this, options);
       };
     });
-    await hotSculptCard
-      .getByRole("link", { name: "Ver horarios de HOT SCULPT" })
+    await hotBootyCard
+      .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
       .click();
 
     await expect(page).toHaveURL(/#horarios$/);
-    await expect(page.locator(".mat-schedule-selection")).toContainText("Horarios de HOT SCULPT");
+    await expect(page.locator(".mat-schedule-selection")).toContainText("Horarios de HOT BOOTY");
 
     const mobileSchedule = page.locator(".mat-schedule__mobile");
     const selectedLinks = mobileSchedule.locator(
-      '[data-schedule-class="hot-sculpt"][data-schedule-selected="true"]',
+      '[data-schedule-class="hot-booty"][data-schedule-selected="true"]',
     );
     const firstSelectedLink = selectedLinks.first();
 
-    await expect(selectedLinks).toHaveCount(5);
+    await expect(selectedLinks).toHaveCount(4);
     await expect(firstSelectedLink).toBeFocused();
     await expect(firstSelectedLink.locator("xpath=ancestor::details[1]")).toHaveAttribute(
       "open",
       "",
     );
 
+    await firstSelectedLink.evaluate((link) => link.blur());
     const selectedStyles = await firstSelectedLink.evaluate((link) => {
       const styles = getComputedStyle(link);
 
@@ -168,26 +169,29 @@ test(
     });
     const comparisonBackground = await firstSelectedLink
       .locator("xpath=ancestor::details[1]")
-      .locator('.mat-schedule__class-link--moderate:not([data-schedule-selected="true"])')
+      .locator('.mat-schedule__class-link--high:not([data-schedule-selected="true"])')
       .first()
       .evaluate((link) => getComputedStyle(link).backgroundColor);
 
     expect(selectedStyles.backgroundColor).toBe(comparisonBackground);
-    expect(selectedStyles.boxShadow).toContain("6px");
-    expect(selectedStyles.boxShadow).toContain("3px");
+    expect(selectedStyles.boxShadow).toContain("rgb(95, 27, 34) 0px 0px 0px 2px");
+    expect(selectedStyles.boxShadow).toContain("rgb(241, 237, 230) 6px 0px 0px 0px inset");
+    expect(selectedStyles.boxShadow).toContain("rgb(241, 237, 230) 0px 0px 0px 3px inset");
     await expect
       .poll(() =>
         page.evaluate(
           () =>
-            (window as Window & { matLastScrollBehavior?: ScrollBehavior }).matLastScrollBehavior,
+            (window as Window & { matLastScheduleScroll?: ScrollIntoViewOptions })
+              .matLastScheduleScroll,
         ),
       )
-      .toBe("auto");
+      .toMatchObject({ behavior: "auto", block: "center" });
 
     await page.getByRole("button", { name: "Ver todos" }).click();
     await expect(mobileSchedule.locator('[data-schedule-selected="true"]')).toHaveCount(0);
     await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
     await expect(page.locator("#horarios h2")).toBeFocused();
+    await expect(page.locator("#horarios h2")).toBeInViewport();
   },
 );
 
@@ -375,11 +379,20 @@ test("schedule accordions are exclusive and class links reveal their catalog car
 
 test("desktop class-to-schedule selection preserves the reverse catalog link", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.setViewportSize({ width: 1024, height: 568 });
+  await page.setViewportSize({ width: 1765, height: 320 });
   await openLanding(page);
 
   const hotBootyCard = page.locator("#clase-hot-booty");
   await hotBootyCard.locator("summary").click();
+  await page.evaluate(() => {
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+
+    Element.prototype.scrollIntoView = function scrollIntoView(options) {
+      (window as Window & { matLastScheduleScroll?: ScrollIntoViewOptions })
+        .matLastScheduleScroll = typeof options === "object" ? options : undefined;
+      originalScrollIntoView.call(this, options);
+    };
+  });
   await hotBootyCard
     .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
     .click();
@@ -393,28 +406,55 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
 
   await expect(selectedLinks).toHaveCount(4);
   await expect(firstSelectedLink).toBeFocused();
-  await expect(scheduleHeading).toHaveCSS("position", "sticky");
-  await expect(page.locator("#horarios h2")).toBeInViewport();
+  await expect(scheduleHeading).toHaveCSS("position", "static");
+  await expect(selectionStatus).toHaveCSS("position", "sticky");
   await expect(selectionStatus).toContainText("Horarios de HOT BOOTY");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { matLastScheduleScroll?: ScrollIntoViewOptions })
+            .matLastScheduleScroll,
+      ),
+    )
+    .toMatchObject({ behavior: "auto", block: "start" });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const target = document.querySelector<HTMLElement>(
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+        )!;
+        const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
+        const targetStyles = getComputedStyle(target);
+        const focusExtent =
+          Number.parseFloat(targetStyles.outlineWidth) +
+          Number.parseFloat(targetStyles.outlineOffset);
+
+        return (
+          target.getBoundingClientRect().top -
+          focusExtent -
+          dayHeader.getBoundingClientRect().bottom
+        );
+      }),
+    )
+    .toBeGreaterThanOrEqual(8);
 
   const geometry = await page.evaluate(() => {
     const header = document.querySelector<HTMLElement>(".site-header")!.getBoundingClientRect();
-    const heading = document
-      .querySelector<HTMLElement>(".mat-schedule__heading")!
-      .getBoundingClientRect();
     const status = document
       .querySelector<HTMLElement>(".mat-schedule-selection")!
       .getBoundingClientRect();
-    const target = document
-      .querySelector<HTMLElement>(
-        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
-      )!
-      .getBoundingClientRect();
+    const targetElement = document.querySelector<HTMLElement>(
+      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+    )!;
+    const target = targetElement.getBoundingClientRect();
+    const targetStyles = getComputedStyle(targetElement);
+    const focusExtent =
+      Number.parseFloat(targetStyles.outlineWidth) + Number.parseFloat(targetStyles.outlineOffset);
 
     return {
       headerBottom: header.bottom,
-      headingTop: heading.top,
-      headingBottom: heading.bottom,
+      statusTop: status.top,
       statusBottom: status.bottom,
       dayHeaders: Array.from(
         document.querySelectorAll<HTMLElement>(".mat-schedule-table__day"),
@@ -424,21 +464,37 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
           return { top: rect.top, bottom: rect.bottom };
         },
       ),
+      focusExtent,
       targetTop: target.top,
       targetBottom: target.bottom,
       viewportHeight: window.innerHeight,
     };
   });
 
-  expect(geometry.headingTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
-  expect(geometry.headingBottom).toBe(geometry.statusBottom);
+  expect(geometry.statusTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
+  expect(geometry.statusTop).toBeLessThanOrEqual(geometry.headerBottom + 1);
   expect(geometry.dayHeaders).toHaveLength(6);
   for (const dayHeader of geometry.dayHeaders) {
-    expect(dayHeader.top).toBeGreaterThanOrEqual(geometry.headingBottom - 1);
-    expect(dayHeader.bottom).toBeLessThanOrEqual(geometry.targetTop);
+    expect(dayHeader.top).toBeGreaterThanOrEqual(geometry.statusBottom - 1);
+    expect(geometry.targetTop - geometry.focusExtent).toBeGreaterThanOrEqual(
+      dayHeader.bottom + 8,
+    );
     expect(dayHeader.bottom).toBeLessThanOrEqual(geometry.viewportHeight);
   }
-  expect(geometry.targetBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+  expect(geometry.targetBottom + geometry.focusExtent).toBeLessThanOrEqual(
+    geometry.viewportHeight,
+  );
+
+  await firstSelectedLink.evaluate((link) => link.blur());
+  const highStyles = await firstSelectedLink.evaluate((link) => {
+    const styles = getComputedStyle(link);
+
+    return { backgroundColor: styles.backgroundColor, boxShadow: styles.boxShadow };
+  });
+
+  expect(highStyles.backgroundColor).toBe("rgb(95, 27, 34)");
+  expect(highStyles.boxShadow).toContain("rgb(250, 218, 221) 0px 0px 0px 2px");
+  expect(highStyles.boxShadow).toContain("rgb(241, 237, 230) 6px 0px 0px 0px inset");
 
   await firstSelectedLink.click();
 
@@ -446,6 +502,96 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   await expect(hotBootyCard).toHaveAttribute("open", "");
   await expect(hotBootyCard.locator("summary")).toBeFocused();
   await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
+
+  const stretchingCard = page.locator("#clase-stretching");
+  await stretchingCard.locator("summary").click();
+  await stretchingCard
+    .getByRole("link", { name: "Ver horarios de STRETCHING" })
+    .click();
+
+  const lowSelectedLink = page
+    .locator(
+      '.mat-schedule__desktop [data-schedule-class="stretching"][data-schedule-selected="true"]',
+    )
+    .first();
+  await expect(lowSelectedLink).toBeFocused();
+  await lowSelectedLink.evaluate((link) => link.blur());
+  const lowStyles = await lowSelectedLink.evaluate((link) => {
+    const styles = getComputedStyle(link);
+
+    return { backgroundColor: styles.backgroundColor, boxShadow: styles.boxShadow };
+  });
+
+  expect(lowStyles.backgroundColor).toBe("rgb(226, 217, 205)");
+  expect(lowStyles.boxShadow).toContain("rgb(250, 218, 221) 0px 0px 0px 2px");
+  expect(lowStyles.boxShadow).toContain("rgb(43, 43, 43) 6px 0px 0px 0px inset");
+
+  await lowSelectedLink.click();
+  await expect(stretchingCard).toHaveAttribute("open", "");
+
+  const absOnCard = page.locator("#clase-abs-on");
+  await absOnCard.locator("summary").click();
+  await absOnCard.getByRole("link", { name: "Ver horarios de ABS ON" }).click();
+
+  const moderateSelectedLink = page
+    .locator(
+      '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]',
+    )
+    .first();
+  await expect(moderateSelectedLink).toBeFocused();
+  await moderateSelectedLink.evaluate((link) => link.blur());
+  const moderateStyles = await moderateSelectedLink.evaluate((link) => {
+    const styles = getComputedStyle(link);
+
+    return { backgroundColor: styles.backgroundColor, boxShadow: styles.boxShadow };
+  });
+
+  expect(moderateStyles.backgroundColor).toBe("rgb(250, 218, 221)");
+  expect(moderateStyles.boxShadow).toContain("rgb(250, 218, 221) 0px 0px 0px 2px");
+  expect(moderateStyles.boxShadow).toContain("rgb(95, 27, 34) 6px 0px 0px 0px inset");
+
+  await page.getByRole("button", { name: "Ver todos" }).click();
+  await expect(
+    page.locator('.mat-schedule__desktop [data-schedule-selected="true"]'),
+  ).toHaveCount(0);
+  await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
+  await expect(page.locator("#horarios h2")).toBeFocused();
+  await expect(page.locator("#horarios h2")).toBeInViewport();
+
+  await page.setViewportSize({ width: 1024, height: 568 });
+  await hotBootyCard.locator("summary").click();
+  await hotBootyCard
+    .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
+    .click();
+
+  const boundarySelectedLink = page
+    .locator(
+      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+    )
+    .first();
+  await expect(page.locator(".mat-schedule__desktop")).toBeVisible();
+  await expect(page.locator(".mat-schedule__mobile")).toBeHidden();
+  await expect(boundarySelectedLink).toBeFocused();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const target = document.querySelector<HTMLElement>(
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+        )!;
+        const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
+        const targetStyles = getComputedStyle(target);
+        const focusExtent =
+          Number.parseFloat(targetStyles.outlineWidth) +
+          Number.parseFloat(targetStyles.outlineOffset);
+
+        return (
+          target.getBoundingClientRect().top -
+          focusExtent -
+          dayHeader.getBoundingClientRect().bottom
+        );
+      }),
+    )
+    .toBeGreaterThanOrEqual(8);
 });
 
 
