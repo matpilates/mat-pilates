@@ -32,6 +32,16 @@ test("class cards derive their schedule summaries from the published week", asyn
       name: "Ver horarios de MAT PILATES",
     }),
   ).toHaveAttribute("href", "#horarios");
+  const matPilatesExperienceCta = matPilatesCard.getByRole("link", {
+    name: "Quiero la experiencia MAT PILATES",
+  });
+  await expect(matPilatesExperienceCta).toHaveText("Quiero esta experiencia");
+
+  const matPilatesExperienceHref = await matPilatesExperienceCta.getAttribute("href");
+  expect(matPilatesExperienceHref).not.toBeNull();
+  expect(new URL(matPilatesExperienceHref!).searchParams.get("text")).toBe(
+    "Hola, quiero sumarme a MAT. Me interesa MAT PILATES.",
+  );
   const ctaLayout = await matPilatesCard.locator(".mat-class-card__cta").evaluateAll((ctas) =>
     ctas.map((cta) => {
       const styles = getComputedStyle(cta);
@@ -52,6 +62,34 @@ test("class cards derive their schedule summaries from the published week", asyn
   await yogaCard.locator("summary").click();
   await expect(yogaCard.locator(".mat-class-card__schedule")).toHaveCount(0);
   await expect(yogaCard.locator(".mat-class-card__schedule-link")).toHaveCount(0);
+  await expect(yogaCard.locator(".mat-class-card__cta")).toHaveCount(1);
+
+  const yogaInformationCta = yogaCard.getByRole("link", {
+    name: "Quiero información sobre YOGA",
+  });
+  await expect(yogaInformationCta).toHaveText("Quiero información");
+  await expect(yogaInformationCta).toHaveCSS("text-transform", "uppercase");
+
+  const yogaInformationHref = await yogaInformationCta.getAttribute("href");
+  expect(yogaInformationHref).not.toBeNull();
+
+  const yogaInformationUrl = new URL(yogaInformationHref!);
+  expect(yogaInformationUrl.hostname).toBe("wa.me");
+  expect(yogaInformationUrl.searchParams.get("text")).toBe(
+    "Hola, quiero información sobre YOGA.",
+  );
+  await expect(page.locator(".mat-class-card__schedule-link")).toHaveCount(10);
+
+  const informationOnlyClassIds = await page.locator(".mat-class-card").evaluateAll((cards) =>
+    cards
+      .filter((card) => {
+        const ctas = card.querySelectorAll(".mat-class-card__cta");
+
+        return ctas.length === 1 && ctas[0]?.textContent?.trim() === "Quiero información";
+      })
+      .map((card) => card.id),
+  );
+  expect(informationOnlyClassIds).toEqual(["clase-yoga"]);
 
   const occurrenceCounts = await page.evaluate(() => {
     const summaries = Object.fromEntries(
@@ -132,6 +170,44 @@ test(
     await expect(mobileSchedule.locator('[data-schedule-selected="true"]')).toHaveCount(0);
     await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
     await expect(page.locator("#horarios h2")).toBeFocused();
+  },
+);
+
+test(
+  "mobile menu clears an active schedule selection when navigating away",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-03T12:00:00-03:00"));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openLanding(page);
+
+    const hotSculptCard = page.locator("#clase-hot-sculpt");
+    await hotSculptCard.locator("summary").click();
+    await hotSculptCard
+      .getByRole("link", { name: "Ver horarios de HOT SCULPT" })
+      .click();
+
+    const scheduleSelection = page.locator(".mat-schedule-selection");
+    const selectedLinks = page.locator(
+      '.mat-schedule__mobile [data-schedule-class="hot-sculpt"][data-schedule-selected="true"]',
+    );
+
+    await expect(page).toHaveURL(/#horarios$/);
+    await expect(scheduleSelection).toContainText("Horarios de HOT SCULPT");
+    await expect(selectedLinks).toHaveCount(5);
+
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page
+      .getByRole("navigation", { name: "Navegación móvil" })
+      .getByRole("link", { name: "Clases", exact: true })
+      .click();
+
+    await expect(page).toHaveURL(/#clases$/);
+    await expect(page.locator("#mobile-navigation")).toHaveCount(0);
+    await expect(scheduleSelection).toHaveCount(0);
+    await expect(selectedLinks).toHaveCount(0);
+    await expect(page.locator("#clases h2")).toBeFocused();
   },
 );
 

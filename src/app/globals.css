@@ -504,7 +504,22 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mat-manifesto__static {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    padding-inline: clamp(24px, 5vw, 60px);
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
+  }
+
   .mat-manifesto__track {
+    display: none;
     animation: none;
     transform: none;
     will-change: auto;
@@ -789,8 +804,41 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mat-class-card__name {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .mat-class-card__title-viewport {
+    overflow: visible;
+  }
+
   .mat-class-card__title-track {
+    display: block;
+    width: 100%;
     animation: none;
+  }
+
+  .mat-class-card__title-track-item {
+    display: none;
+  }
+
+  .mat-class-card__title-track-item:first-child {
+    display: block;
+    width: 100%;
+    padding-right: 0;
+  }
+
+  .mat-class-card__title-content {
+    display: block;
+    width: auto;
+    white-space: normal;
+  }
+
+  .mat-class-card__title-fire {
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: 0.08em;
   }
 }
 
