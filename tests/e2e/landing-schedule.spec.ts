@@ -1,6 +1,35 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, test } from "@playwright/test";
 
 import { openLanding } from "./support/landing";
+
+async function expectDisclosureOpenSettled(disclosure: Locator) {
+  await expect
+    .poll(
+      () =>
+        disclosure.evaluate((card) => {
+          const expansion = card.querySelector<HTMLElement>(".mat-disclosure__expansion");
+          const body = card.querySelector<HTMLElement>(".mat-disclosure__body");
+
+          if (!expansion || !body) {
+            return false;
+          }
+
+          const bodyStyles = getComputedStyle(body);
+          const translateY =
+            bodyStyles.transform === "none"
+              ? 0
+              : new DOMMatrixReadOnly(bodyStyles.transform).m42;
+
+          return (
+            getComputedStyle(expansion).pointerEvents === "auto" &&
+            Number.parseFloat(bodyStyles.opacity) >= 0.999 &&
+            Math.round(translateY) === 0
+          );
+        }),
+      { timeout: 2500 },
+    )
+    .toBe(true);
+}
 
 test("class cards derive their schedule summaries from the published week", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -593,6 +622,117 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     )
     .toBeGreaterThanOrEqual(8);
 });
+
+test(
+  "desktop smooth schedule navigation settles below sticky context",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ width: 1765, height: 320 });
+    await openLanding(page);
+
+    const hotBootyCard = page.locator("#clase-hot-booty");
+    await hotBootyCard.locator("summary").click();
+    await expectDisclosureOpenSettled(hotBootyCard);
+    await page.evaluate(() => {
+      const originalScrollIntoView = Element.prototype.scrollIntoView;
+
+      Element.prototype.scrollIntoView = function scrollIntoView(options) {
+        const browserWindow = window as Window & {
+          matScheduleScrolls?: ScrollIntoViewOptions[];
+        };
+
+        browserWindow.matScheduleScrolls ??= [];
+        if (typeof options === "object") {
+          browserWindow.matScheduleScrolls.push(options);
+        }
+        originalScrollIntoView.call(this, options);
+      };
+    });
+    await hotBootyCard
+      .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
+      .click();
+
+    const selectedLink = page
+      .locator(
+        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+      )
+      .first();
+    await expect(selectedLink).toBeFocused();
+
+    const settledGeometry = await page.evaluate(
+      () =>
+        new Promise<{
+          focusExtent: number;
+          gap: number;
+          targetBottom: number;
+          viewportHeight: number;
+        }>((resolve, reject) => {
+          const deadline = performance.now() + 5000;
+          let lastScrollY = window.scrollY;
+          let stableFrames = 0;
+
+          const inspectFrame = () => {
+            const target = document.querySelector<HTMLElement>(
+              '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+            );
+            const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day");
+
+            if (!target || !dayHeader) {
+              reject(new Error("Schedule target or sticky day header is missing."));
+              return;
+            }
+
+            const targetRect = target.getBoundingClientRect();
+            const targetStyles = getComputedStyle(target);
+            const focusExtent =
+              Number.parseFloat(targetStyles.outlineWidth) +
+              Number.parseFloat(targetStyles.outlineOffset);
+            const gap =
+              targetRect.top - focusExtent - dayHeader.getBoundingClientRect().bottom;
+            const targetIsVisible = targetRect.bottom + focusExtent <= window.innerHeight;
+            const scrollIsStable = Math.abs(window.scrollY - lastScrollY) < 0.5;
+
+            stableFrames = scrollIsStable && gap >= 8 && targetIsVisible ? stableFrames + 1 : 0;
+            lastScrollY = window.scrollY;
+
+            if (stableFrames >= 4) {
+              resolve({
+                focusExtent,
+                gap,
+                targetBottom: targetRect.bottom,
+                viewportHeight: window.innerHeight,
+              });
+              return;
+            }
+
+            if (performance.now() >= deadline) {
+              reject(new Error("Smooth schedule scroll did not settle below the sticky context."));
+              return;
+            }
+
+            window.requestAnimationFrame(inspectFrame);
+          };
+
+          window.requestAnimationFrame(inspectFrame);
+        }),
+    );
+    const scrollCalls = await page.evaluate(
+      () =>
+        (window as Window & { matScheduleScrolls?: ScrollIntoViewOptions[] })
+          .matScheduleScrolls ?? [],
+    );
+
+    expect(scrollCalls).toEqual([
+      { behavior: "smooth", block: "start" },
+      { behavior: "smooth", block: "start" },
+    ]);
+    expect(settledGeometry.gap).toBeGreaterThanOrEqual(8);
+    expect(settledGeometry.targetBottom + settledGeometry.focusExtent).toBeLessThanOrEqual(
+      settledGeometry.viewportHeight,
+    );
+  },
+);
 
 
 test("schedule opens the current day and falls back to Monday on Sunday", async ({ page }) => {
