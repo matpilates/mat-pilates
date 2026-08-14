@@ -51,14 +51,14 @@ npx playwright install chromium firefox webkit
 | `npm run lint:css` | Runs Stylelint over CSS files under `src/`. |
 | `npm run build` | Creates the production build and validates TypeScript. |
 | `npm run start` | Starts the compiled application; requires `npm run build` first. |
-| `npm run test:e2e` | Runs the daily matrix: 36 Chromium functional cases, 24 browser-critical cases in Firefox/WebKit, and 9 visual cases. |
+| `npm run test:e2e` | Runs the daily matrix: 36 Chromium functional cases, 24 browser-critical cases in Firefox/WebKit, and 10 visual cases. |
 | `npm run test:e2e:functional` | Runs the 36 structural and interaction cases in Chromium without visual snapshots. |
 | `npm run test:e2e:browser-critical` | Runs the 12 critical scenarios in Firefox and WebKit (24 executions). |
 | `npm run test:gallery` | Runs the focused studio-gallery functional scenarios in Chromium. |
 | `npm run test:ci-metrics` | Runs the focused regression coverage for the weekly CI metrics reporter. |
 | `npm run test:e2e:smoke` | Runs the 2 public smoke scenarios in Chromium, Firefox, and WebKit (6 executions). |
 | `npm run test:e2e:cross-browser` | Runs all 36 functional scenarios in Chromium, Firefox, and WebKit (108 executions). |
-| `npm run test:e2e:full` | Runs the complete 117-execution matrix, including visual coverage. |
+| `npm run test:e2e:full` | Runs the complete 118-execution matrix, including visual coverage. |
 | `npm run test:gate:dev` | Runs the local sequential equivalent of the required `dev` gate. |
 | `npm run test:gate:release` | Runs the local sequential equivalent of the exhaustive `main` release gate. |
 | `npm run test:e2e:report` | Opens the latest local Playwright HTML report. |
@@ -136,7 +136,7 @@ Approved Windows baselines live beside the tests under `tests/e2e/*-snapshots/`.
 
 Run `npm run test:visual:update` only when a visual change is intentional and approved. Inspect each failure diff first, update the snapshots, inspect the resulting Git diff, and then rerun `npm run test:visual` without the update flag. Never run the update command automatically in CI. CI compares the existing Windows baselines on a Windows runner and uploads failure artifacts without replacing them.
 
-GitHub Actions uses separate validation lanes. Pull requests into `integration/**` or `dev` run lint/build and the 36 Chromium functional cases in parallel, then report the single required `CI dev gate`. Pull requests into `main` run lint/build, all 108 functional cross-browser executions, and the 9 Windows visual cases in parallel, then report the single required `CI release gate`. Vercel remains a separate required provider check. Manual runs use distinct check names and cannot replace either protected gate. Always verify results against the Pull Request's current head commit. Reports and failure artifacts are retained for seven days.
+GitHub Actions uses separate validation lanes. Pull requests into `integration/**` or `dev` run lint/build and the 36 Chromium functional cases in parallel, then report the single required `CI dev gate`. Pull requests into `main` run lint/build, all 108 functional cross-browser executions, and the 10 Windows visual cases in parallel, then report the single required `CI release gate`. Vercel remains a separate required provider check. Manual runs use distinct check names and cannot replace either protected gate. Always verify results against the Pull Request's current head commit. Reports and failure artifacts are retained for seven days.
 
 The expected target is under 10 minutes for the `dev` gate under normal runner capacity. The local gate commands use one Playwright worker to mirror CI and avoid resource-contention failures that do not occur on the protected runner. The exhaustive release gate may take 20 to 40 minutes because it runs at promotion time rather than for every small change. The scheduled `CI metrics` workflow reports weekly median and p95 duration, rerun rate, cancellations, and failures by job. See `docs/delivery-runbook.md` for check-state diagnosis, incident handling, and reliability thresholds.
 

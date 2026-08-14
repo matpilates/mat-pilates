@@ -10,6 +10,21 @@ const visualViewports = [
   { id: "desktop", width: 1440, height: 1000 },
 ] as const;
 
+async function waitForVisibleImages(page: Page) {
+  await page.waitForFunction(() =>
+    Array.from(document.images)
+      .filter((image) => {
+        const styles = getComputedStyle(image);
+        return (
+          styles.display !== "none" &&
+          styles.visibility !== "hidden" &&
+          image.getClientRects().length > 0
+        );
+      })
+      .every((image) => image.complete && image.naturalWidth > 0),
+  );
+}
+
 async function prepareVisualPage(page: Page) {
   await page.clock.install({ time: new Date("2026-08-03T12:00:00-03:00") });
   await page.route(/https:\/\/www\.google\.com\/maps\/embed.*/, (route) => route.abort());
@@ -23,18 +38,7 @@ async function prepareVisualPage(page: Page) {
     await sections.nth(index).scrollIntoViewIfNeeded();
   }
 
-  await page.waitForFunction(() =>
-    Array.from(document.images)
-      .filter((image) => {
-        const styles = getComputedStyle(image);
-        return (
-          styles.display !== "none" &&
-          styles.visibility !== "hidden" &&
-          image.getClientRects().length > 0
-        );
-      })
-      .every((image) => image.complete && image.naturalWidth > 0),
-  );
+  await waitForVisibleImages(page);
   // Full-page screenshots preserve sticky positions from the current scroll offset.
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
@@ -100,6 +104,59 @@ test.describe("@visual landing snapshots", () => {
     await classCard.locator("summary").click();
 
     await expect(classCard).toHaveScreenshot("mobile-class-schedule-disclosure.png", {
+      animations: "disabled",
+    });
+  });
+
+  test("selected schedule context", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await prepareVisualPage(page);
+
+    const mobileCard = page.locator("#clase-hot-sculpt");
+    await mobileCard.locator("summary").click();
+    await mobileCard
+      .getByRole("link", { name: "Ver horarios de HOT SCULPT" })
+      .click();
+
+    const mobileSelectedLink = page
+      .locator(
+        '.mat-schedule__mobile [data-schedule-class="hot-sculpt"][data-schedule-selected="true"]',
+      )
+      .first();
+    const selectedDay = mobileSelectedLink.locator("xpath=ancestor::details[1]");
+
+    await expect(mobileSelectedLink).toBeFocused();
+    await expect(selectedDay).toHaveScreenshot("mobile-selected-schedule-day.png", {
+      animations: "disabled",
+    });
+
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    const desktopCard = page.locator("#clase-hot-booty");
+    await desktopCard.locator("summary").click();
+    await desktopCard
+      .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
+      .click();
+
+    const desktopSelectedLink = page
+      .locator(
+        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+      )
+      .first();
+
+    await expect(desktopSelectedLink).toBeFocused();
+    await waitForVisibleImages(page);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await expect(page).toHaveScreenshot("desktop-selected-late-schedule.png", {
       animations: "disabled",
     });
   });
