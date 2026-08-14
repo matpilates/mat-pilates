@@ -955,6 +955,10 @@ a {
   color: var(--mat-color-pearl-neutral);
 }
 
+.mat-schedule:has(.mat-schedule-selection) {
+  gap: 10px;
+}
+
 .mat-schedule__heading,
 .mat-schedule__heading .mat-section-heading__title {
   gap: 10px;
@@ -993,6 +997,10 @@ a {
 .mat-schedule__mobile {
   display: grid;
   gap: 8px;
+}
+
+.mat-schedule:has(.mat-schedule-selection) .mat-schedule__mobile {
+  margin-top: 14px;
 }
 
 .mat-schedule-day {
@@ -1119,6 +1127,7 @@ a {
 .mat-schedule__class-link--selected:hover,
 .mat-schedule__class-link--selected:active {
   box-shadow:
+    0 0 0 2px var(--mat-focus-ring),
     inset 6px 0 0 currentcolor,
     inset 0 0 0 3px currentcolor;
 }
@@ -2622,7 +2631,7 @@ a {
 
 @media (min-width: 1024px) {
   .mat-schedule {
-    --mat-schedule-sticky-heading-height: 90px;
+    --mat-schedule-sticky-context-height: 0px;
     --mat-schedule-sticky-day-height: 48px;
 
     padding: 60px max(60px, calc((100% - 1160px) / 2));
@@ -2630,7 +2639,9 @@ a {
   }
 
   .mat-schedule:has(.mat-schedule-selection) {
-    --mat-schedule-sticky-heading-height: 150px;
+    --mat-schedule-sticky-context-height: 44px;
+
+    gap: 16px;
   }
 
   .mat-schedule__heading,
@@ -2638,7 +2649,7 @@ a {
     gap: var(--mat-space-4);
   }
 
-  .mat-schedule__heading {
+  .mat-schedule-selection {
     position: sticky;
     z-index: 2;
     top: var(--mat-header-height);
@@ -2652,6 +2663,10 @@ a {
   .mat-schedule__desktop {
     display: block;
     min-width: 0;
+  }
+
+  .mat-schedule:has(.mat-schedule-selection) .mat-schedule__desktop {
+    margin-top: 20px;
   }
 
   .mat-schedule-table {
@@ -2687,7 +2702,7 @@ a {
   .mat-schedule-table thead th {
     position: sticky;
     z-index: 1;
-    top: calc(var(--mat-header-height) + var(--mat-schedule-sticky-heading-height));
+    top: calc(var(--mat-header-height) + var(--mat-schedule-sticky-context-height));
   }
 
   .mat-schedule-table__slot {
@@ -2716,7 +2731,10 @@ a {
     padding: 8px;
     font-size: var(--mat-font-size-12);
     line-height: 16px;
-    scroll-margin-top: var(--mat-schedule-sticky-day-height);
+    scroll-margin-top: calc(
+      var(--mat-header-height) + var(--mat-schedule-sticky-context-height) +
+        var(--mat-schedule-sticky-day-height) + var(--mat-space-4)
+    );
     text-wrap: balance;
   }
 

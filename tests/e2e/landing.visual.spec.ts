@@ -112,15 +112,15 @@ test.describe("@visual landing snapshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await prepareVisualPage(page);
 
-    const mobileCard = page.locator("#clase-hot-sculpt");
+    const mobileCard = page.locator("#clase-hot-booty");
     await mobileCard.locator("summary").click();
     await mobileCard
-      .getByRole("link", { name: "Ver horarios de HOT SCULPT" })
+      .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
       .click();
 
     const mobileSelectedLink = page
       .locator(
-        '.mat-schedule__mobile [data-schedule-class="hot-sculpt"][data-schedule-selected="true"]',
+        '.mat-schedule__mobile [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
       )
       .first();
     const selectedDay = mobileSelectedLink.locator("xpath=ancestor::details[1]");
@@ -130,21 +130,21 @@ test.describe("@visual landing snapshots", () => {
       animations: "disabled",
     });
 
-    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.setViewportSize({ width: 1765, height: 520 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.evaluate(async () => {
       await document.fonts.ready;
     });
 
-    const desktopCard = page.locator("#clase-hot-booty");
+    const desktopCard = page.locator("#clase-abs-on");
     await desktopCard.locator("summary").click();
     await desktopCard
-      .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
+      .getByRole("link", { name: "Ver horarios de ABS ON" })
       .click();
 
     const desktopSelectedLink = page
       .locator(
-        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+        '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]',
       )
       .first();
 
