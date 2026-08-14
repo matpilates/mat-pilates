@@ -68,6 +68,61 @@ async function loadVisualContent(page: Page) {
   });
 }
 
+async function expectReducedMotionFallbacks(page: Page) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() => page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches))
+    .toBe(true);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+
+  const layout = await page.evaluate(() => {
+    const documentElement = document.documentElement;
+    const manifesto = document.querySelector<HTMLElement>(".mat-manifesto")!;
+    const manifestoStatic = document.querySelector<HTMLElement>(".mat-manifesto__static")!;
+    const manifestoTrack = document.querySelector<HTMLElement>(".mat-manifesto__track")!;
+    const titleViewports = Array.from(
+      document.querySelectorAll<HTMLElement>(".mat-class-card__title-viewport"),
+    );
+    const titleTracks = Array.from(
+      document.querySelectorAll<HTMLElement>(".mat-class-card__title-track"),
+    );
+
+    return {
+      documentOverflow: documentElement.scrollWidth - documentElement.clientWidth,
+      manifesto: {
+        overflow: manifesto.scrollWidth - manifesto.clientWidth,
+        staticDisplay: getComputedStyle(manifestoStatic).display,
+        staticText: manifestoStatic.textContent?.trim(),
+        trackDisplay: getComputedStyle(manifestoTrack).display,
+      },
+      clippedTitleIds: titleViewports
+        .filter((viewport) => viewport.scrollWidth > viewport.clientWidth + 1)
+        .map((viewport) => viewport.closest<HTMLElement>(".mat-class-card")?.id),
+      visibleTitleCopies: titleTracks.map(
+        (track) =>
+          Array.from(track.children).filter(
+            (item) => getComputedStyle(item).display !== "none",
+          ).length,
+      ),
+    };
+  });
+
+  expect(layout.documentOverflow).toBeLessThanOrEqual(1);
+  expect(layout.manifesto).toEqual({
+    overflow: 0,
+    staticDisplay: "block",
+    staticText: "Movimiento · Presencia · Bienestar.",
+    trackDisplay: "none",
+  });
+  expect(layout.clippedTitleIds).toEqual([]);
+  expect(layout.visibleTitleCopies.every((count) => count === 1)).toBe(true);
+}
+
 test.describe("responsive contract", () => {
   test("tablet portrait Hot Mat ends 32 px after its closing copy", async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -200,6 +255,7 @@ test.describe("responsive contract", () => {
         await expect(map).toBeHidden();
       }
 
+      await expectReducedMotionFallbacks(page);
       expect(runtimeErrors).toEqual([]);
     });
   }

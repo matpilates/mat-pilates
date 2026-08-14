@@ -155,7 +155,7 @@ export function getScheduledClassOffering(classId: ClassId) {
 }
 
 export function getClassScheduleDays(classId: ClassId): readonly ClassScheduleDay[] {
-  return weeklySchedule.days.flatMap((day) => {
+  const scheduleDays = weeklySchedule.days.flatMap((day) => {
     const times = day.slots
       .filter((slot) => slot.classId === classId)
       .map((slot) => slot.startTime);
@@ -171,6 +171,20 @@ export function getClassScheduleDays(classId: ClassId): readonly ClassScheduleDa
         ]
       : [];
   });
+
+  const classOffering = getScheduledClassOffering(classId);
+  const hasPublishedSchedule = scheduleDays.length > 0;
+
+  if (classOffering.isActive !== hasPublishedSchedule) {
+    const activityLabel = classOffering.isActive ? "active" : "inactive";
+    const scheduleLabel = hasPublishedSchedule ? "has published slots" : "has no published slots";
+
+    throw new Error(
+      `Class ${classOffering.name} is ${activityLabel} but ${scheduleLabel}.`,
+    );
+  }
+
+  return scheduleDays;
 }
 
 export function formatScheduleTime(time: ScheduleTime) {
