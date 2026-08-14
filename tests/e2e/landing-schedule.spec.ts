@@ -157,6 +157,24 @@ test(
       "open",
       "",
     );
+
+    const selectedStyles = await firstSelectedLink.evaluate((link) => {
+      const styles = getComputedStyle(link);
+
+      return {
+        backgroundColor: styles.backgroundColor,
+        boxShadow: styles.boxShadow,
+      };
+    });
+    const comparisonBackground = await firstSelectedLink
+      .locator("xpath=ancestor::details[1]")
+      .locator('.mat-schedule__class-link--moderate:not([data-schedule-selected="true"])')
+      .first()
+      .evaluate((link) => getComputedStyle(link).backgroundColor);
+
+    expect(selectedStyles.backgroundColor).toBe(comparisonBackground);
+    expect(selectedStyles.boxShadow).toContain("6px");
+    expect(selectedStyles.boxShadow).toContain("3px");
     await expect
       .poll(() =>
         page.evaluate(
@@ -252,8 +270,29 @@ test(
 );
 
 test("schedule reuses the catalog intensity colors and accessible labels", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.clock.setFixedTime(new Date("2026-08-03T12:00:00-03:00"));
+  await page.setViewportSize({ width: 390, height: 844 });
   await openLanding(page);
+
+  const mobileHighLink = page
+    .locator(
+      ".mat-schedule__mobile .mat-schedule-day[open] .mat-schedule__class-link--high",
+    )
+    .first();
+  await mobileHighLink.focus();
+  await expect(mobileHighLink).toHaveCSS("outline-color", "rgb(95, 27, 34)");
+  await expect(mobileHighLink).toHaveCSS("outline-width", "2px");
+  await expect(mobileHighLink).toHaveCSS("outline-offset", "4px");
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  const desktopModerateLink = page
+    .locator(".mat-schedule__desktop .mat-schedule__class-link--moderate")
+    .first();
+  await desktopModerateLink.focus();
+  await expect(desktopModerateLink).toHaveCSS("outline-color", "rgb(250, 218, 221)");
+  await expect(desktopModerateLink).toHaveCSS("outline-width", "2px");
+  await expect(desktopModerateLink).toHaveCSS("outline-offset", "4px");
 
   const intensityStyles = await page.evaluate(() =>
     (["low", "moderate", "high"] as const).map((intensity) => {
@@ -335,26 +374,77 @@ test("schedule accordions are exclusive and class links reveal their catalog car
 });
 
 test("desktop class-to-schedule selection preserves the reverse catalog link", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1024, height: 568 });
   await openLanding(page);
 
-  const matPilatesCard = page.locator("#clase-mat-pilates");
-  await matPilatesCard.locator("summary").click();
-  await matPilatesCard
-    .getByRole("link", { name: "Ver horarios de MAT PILATES" })
+  const hotBootyCard = page.locator("#clase-hot-booty");
+  await hotBootyCard.locator("summary").click();
+  await hotBootyCard
+    .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
     .click();
 
   const selectedLinks = page.locator(
-    '.mat-schedule__desktop [data-schedule-class="mat-pilates"][data-schedule-selected="true"]',
+    '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
   );
+  const firstSelectedLink = selectedLinks.first();
+  const scheduleHeading = page.locator(".mat-schedule__heading");
+  const selectionStatus = page.locator(".mat-schedule-selection");
 
-  await expect(selectedLinks).toHaveCount(7);
-  await expect(selectedLinks.first()).toBeFocused();
-  await selectedLinks.first().click();
+  await expect(selectedLinks).toHaveCount(4);
+  await expect(firstSelectedLink).toBeFocused();
+  await expect(scheduleHeading).toHaveCSS("position", "sticky");
+  await expect(page.locator("#horarios h2")).toBeInViewport();
+  await expect(selectionStatus).toContainText("Horarios de HOT BOOTY");
 
-  await expect(page).toHaveURL(/#clase-mat-pilates$/);
-  await expect(matPilatesCard).toHaveAttribute("open", "");
-  await expect(matPilatesCard.locator("summary")).toBeFocused();
+  const geometry = await page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>(".site-header")!.getBoundingClientRect();
+    const heading = document
+      .querySelector<HTMLElement>(".mat-schedule__heading")!
+      .getBoundingClientRect();
+    const status = document
+      .querySelector<HTMLElement>(".mat-schedule-selection")!
+      .getBoundingClientRect();
+    const target = document
+      .querySelector<HTMLElement>(
+        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+      )!
+      .getBoundingClientRect();
+
+    return {
+      headerBottom: header.bottom,
+      headingTop: heading.top,
+      headingBottom: heading.bottom,
+      statusBottom: status.bottom,
+      dayHeaders: Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-schedule-table__day"),
+        (dayHeader) => {
+          const rect = dayHeader.getBoundingClientRect();
+
+          return { top: rect.top, bottom: rect.bottom };
+        },
+      ),
+      targetTop: target.top,
+      targetBottom: target.bottom,
+      viewportHeight: window.innerHeight,
+    };
+  });
+
+  expect(geometry.headingTop).toBeGreaterThanOrEqual(geometry.headerBottom - 1);
+  expect(geometry.headingBottom).toBe(geometry.statusBottom);
+  expect(geometry.dayHeaders).toHaveLength(6);
+  for (const dayHeader of geometry.dayHeaders) {
+    expect(dayHeader.top).toBeGreaterThanOrEqual(geometry.headingBottom - 1);
+    expect(dayHeader.bottom).toBeLessThanOrEqual(geometry.targetTop);
+    expect(dayHeader.bottom).toBeLessThanOrEqual(geometry.viewportHeight);
+  }
+  expect(geometry.targetBottom).toBeLessThanOrEqual(geometry.viewportHeight);
+
+  await firstSelectedLink.click();
+
+  await expect(page).toHaveURL(/#clase-hot-booty$/);
+  await expect(hotBootyCard).toHaveAttribute("open", "");
+  await expect(hotBootyCard.locator("summary")).toBeFocused();
   await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
 });
 
