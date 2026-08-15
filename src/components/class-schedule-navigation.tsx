@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/motion-tokens";
 import { useMatReducedMotion } from "@/components/ui/use-mat-reduced-motion";
 import type { ClassId } from "@/lib/site-content";
-import type { WeekdayId } from "@/lib/schedule-content";
 
 interface SelectedScheduleClass {
   readonly id: ClassId;
@@ -35,46 +34,8 @@ const ClassScheduleNavigationContext = createContext<ClassScheduleNavigationValu
 const scheduleFocusTimeout = 1000;
 // The sticky selection context settles one paint after it mounts, so align once more.
 const scheduleScrollPassCount = 2;
-const scheduleWeekdays: readonly WeekdayId[] = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
-const weekdayToScheduleDay: Record<string, WeekdayId | undefined> = {
-  monday: "monday",
-  tuesday: "tuesday",
-  wednesday: "wednesday",
-  thursday: "thursday",
-  friday: "friday",
-  saturday: "saturday",
-};
 
-function getScheduleDayOrder(timezone: string): readonly WeekdayId[] {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "long",
-  })
-    .format(new Date())
-    .toLowerCase();
-  const currentDay: WeekdayId | undefined =
-    weekday === "sunday" ? "monday" : weekdayToScheduleDay[weekday];
-
-  if (!currentDay) {
-    return scheduleWeekdays;
-  }
-
-  const currentDayIndex = scheduleWeekdays.indexOf(currentDay);
-
-  return [
-    ...scheduleWeekdays.slice(currentDayIndex),
-    ...scheduleWeekdays.slice(0, currentDayIndex),
-  ];
-}
-
-function findVisibleScheduleLink(classId: ClassId, timezone: string) {
+function findVisibleScheduleLink(classId: ClassId) {
   const schedule = document.getElementById("horarios");
 
   if (!schedule) {
@@ -87,31 +48,18 @@ function findVisibleScheduleLink(classId: ClassId, timezone: string) {
       : ".mat-schedule__mobile",
   );
 
-  const matchingLinks = Array.from(
-    scheduleView?.querySelectorAll<HTMLAnchorElement>("[data-schedule-class]") ?? [],
-  ).filter((link) => link.dataset.scheduleClass === classId);
-
-  if (!window.matchMedia("(min-width: 1024px)").matches) {
-    return matchingLinks[0] ?? null;
-  }
-
   return (
-    getScheduleDayOrder(timezone)
-      .flatMap((dayId) =>
-        matchingLinks.filter(
-          (link) =>
-            link.closest<HTMLElement>("[data-schedule-day]")?.dataset.scheduleDay === dayId,
-        ),
-      )
-      .at(0) ?? null
+    Array.from(
+      scheduleView?.querySelectorAll<HTMLAnchorElement>("[data-schedule-class]") ?? [],
+    ).find((link) => link.dataset.scheduleClass === classId) ?? null
   );
 }
 
-function moveToSchedule(classId: ClassId, timezone: string) {
+function moveToSchedule(classId: ClassId) {
   window.history.pushState(null, "", "#horarios");
 
   window.requestAnimationFrame(() => {
-    const target = findVisibleScheduleLink(classId, timezone);
+    const target = findVisibleScheduleLink(classId);
 
     if (!target) {
       return;
@@ -132,7 +80,7 @@ function moveToSchedule(classId: ClassId, timezone: string) {
     let scrolledTarget: HTMLAnchorElement | null = null;
     let scrollPasses = 0;
     const focusWhenInteractive = () => {
-      const currentTarget = findVisibleScheduleLink(classId, timezone);
+      const currentTarget = findVisibleScheduleLink(classId);
       const currentDisclosure = currentTarget?.closest<HTMLDetailsElement>(".mat-schedule-day");
       const currentExpansion = currentTarget?.closest<HTMLElement>(
         ".mat-disclosure__expansion",
@@ -175,13 +123,7 @@ function moveToSchedule(classId: ClassId, timezone: string) {
   });
 }
 
-export function ClassScheduleNavigationProvider({
-  children,
-  scheduleTimezone,
-}: {
-  children: ReactNode;
-  scheduleTimezone: string;
-}) {
+export function ClassScheduleNavigationProvider({ children }: { children: ReactNode }) {
   const [selectedClass, setSelectedClass] = useState<SelectedScheduleClass | null>(null);
 
   useEffect(() => {
@@ -202,9 +144,9 @@ export function ClassScheduleNavigationProvider({
 
   useEffect(() => {
     if (selectedClass) {
-      moveToSchedule(selectedClass.id, scheduleTimezone);
+      moveToSchedule(selectedClass.id);
     }
-  }, [scheduleTimezone, selectedClass]);
+  }, [selectedClass]);
 
   const clearSelection = useCallback(() => {
     setSelectedClass(null);
