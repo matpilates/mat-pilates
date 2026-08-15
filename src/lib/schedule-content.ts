@@ -10,6 +10,40 @@ export type WeekdayId =
 
 export type ScheduleTime = `${number}${number}:${number}${number}`;
 
+export const scheduleWeekdays: readonly WeekdayId[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+];
+
+const weekdayByIntlName: Readonly<Record<string, WeekdayId | undefined>> = {
+  monday: "monday",
+  tuesday: "tuesday",
+  wednesday: "wednesday",
+  thursday: "thursday",
+  friday: "friday",
+  saturday: "saturday",
+};
+
+export function getScheduleDayOrder(timezone: string): readonly WeekdayId[] {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    weekday: "long",
+  })
+    .format(new Date())
+    .toLowerCase();
+  const currentDay = weekday === "sunday" ? "monday" : weekdayByIntlName[weekday];
+  const currentDayIndex = currentDay ? scheduleWeekdays.indexOf(currentDay) : 0;
+
+  return [
+    ...scheduleWeekdays.slice(currentDayIndex),
+    ...scheduleWeekdays.slice(0, currentDayIndex),
+  ];
+}
+
 export interface WeeklyScheduleSlot {
   readonly classId: ClassId;
   readonly startTime: ScheduleTime;

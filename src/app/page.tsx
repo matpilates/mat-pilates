@@ -29,7 +29,7 @@ export default function HomePage() {
         id="mat-pilates-structured-data"
         type="application/ld+json"
       />
-      <ClassScheduleNavigationProvider>
+      <ClassScheduleNavigationProvider scheduleTimezone={weeklySchedule.timezone}>
         <SiteHeader />
         <main>
         <section className="mat-hero mat-scroll-target" id="inicio">
