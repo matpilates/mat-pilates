@@ -263,6 +263,73 @@ test(
 );
 
 test(
+  "mobile class-to-schedule navigation prioritizes today and cycles through the week",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-08-14T12:00:00-03:00") });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const selectClassAndReadFocusedSlot = async (
+      classId: string,
+      className: string,
+      expectedOccurrences: number,
+    ) => {
+      const classCard = page.locator(`#clase-${classId}`);
+      await classCard.locator("summary").click();
+      await classCard.getByRole("link", { name: `Ver horarios de ${className}` }).click();
+
+      const selectedLinks = page.locator(
+        `.mat-schedule__mobile [data-schedule-class="${classId}"][data-schedule-selected="true"]`,
+      );
+      const focusedLink = page.locator(
+        `.mat-schedule__mobile [data-schedule-class="${classId}"][data-schedule-selected="true"]:focus`,
+      );
+
+      await expect(selectedLinks).toHaveCount(expectedOccurrences);
+      await expect(focusedLink).toHaveCount(1);
+      await expect(focusedLink).toBeFocused();
+
+      return focusedLink.evaluate((link) => {
+        const dayDisclosure = link.closest<HTMLDetailsElement>(".mat-schedule-day");
+        const time = link
+          .closest(".mat-schedule-day__slot")
+          ?.querySelector<HTMLTimeElement>("time");
+
+        return {
+          day: dayDisclosure?.dataset.scheduleDay,
+          isOpen: dayDisclosure?.open,
+          time: time?.dateTime,
+        };
+      });
+    };
+
+    await openLanding(page);
+    await expect(
+      selectClassAndReadFocusedSlot("mat-pilates", "MAT PILATES", 7),
+    ).resolves.toEqual({ day: "friday", isOpen: true, time: "08:00" });
+
+    await page.clock.setFixedTime(new Date("2026-08-14T12:00:00-03:00"));
+    await openLanding(page);
+    await expect(
+      selectClassAndReadFocusedSlot("hot-sculpt", "HOT SCULPT", 5),
+    ).resolves.toEqual({ day: "saturday", isOpen: true, time: "10:00" });
+
+    await page.clock.setFixedTime(new Date("2026-08-15T12:00:00-03:00"));
+    await openLanding(page);
+    await expect(
+      selectClassAndReadFocusedSlot("abs-on", "ABS ON", 6),
+    ).resolves.toEqual({ day: "monday", isOpen: true, time: "15:00" });
+
+    await page.clock.setFixedTime(new Date("2026-08-16T12:00:00-03:00"));
+    await openLanding(page);
+    await expect(
+      selectClassAndReadFocusedSlot("hot-booty", "HOT BOOTY", 4),
+    ).resolves.toEqual({ day: "monday", isOpen: true, time: "18:00" });
+  },
+);
+
+test(
   "weekly schedule renders the confirmed data without duplicate day-time slots",
   { tag: ["@smoke", "@cross-browser"] },
   async ({ page }) => {

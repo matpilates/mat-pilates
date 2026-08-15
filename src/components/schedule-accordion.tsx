@@ -2,20 +2,10 @@
 
 import { useEffect } from "react";
 import { openAnimatedDisclosure } from "@/components/animated-disclosure";
+import { getScheduleDayOrder } from "@/lib/schedule-content";
 
 interface ScheduleAccordionProps {
   timezone: string;
-}
-
-function getOpenDayId(timezone: string) {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "long",
-  })
-    .format(new Date())
-    .toLowerCase();
-
-  return weekday === "sunday" ? "monday" : weekday;
 }
 
 export function ScheduleAccordion({ timezone }: ScheduleAccordionProps) {
@@ -24,7 +14,7 @@ export function ScheduleAccordion({ timezone }: ScheduleAccordionProps) {
       .getElementById("horarios")
       ?.querySelector<HTMLElement>(".mat-schedule__mobile");
     const openDay = mobileSchedule?.querySelector<HTMLDetailsElement>(
-      `details[data-schedule-day="${getOpenDayId(timezone)}"]`,
+      `details[data-schedule-day="${getScheduleDayOrder(timezone)[0]}"]`,
     );
 
     if (openDay) {

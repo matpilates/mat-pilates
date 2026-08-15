@@ -17,6 +17,7 @@ import {
   MAT_MOTION_DURATION,
 } from "@/components/ui/motion-tokens";
 import { useMatReducedMotion } from "@/components/ui/use-mat-reduced-motion";
+import { getScheduleDayOrder } from "@/lib/schedule-content";
 import type { ClassId } from "@/lib/site-content";
 
 interface SelectedScheduleClass {
@@ -35,7 +36,7 @@ const scheduleFocusTimeout = 1000;
 // The sticky selection context settles one paint after it mounts, so align once more.
 const scheduleScrollPassCount = 2;
 
-function findVisibleScheduleLink(classId: ClassId) {
+function findVisibleScheduleLink(classId: ClassId, timezone: string) {
   const schedule = document.getElementById("horarios");
 
   if (!schedule) {
@@ -48,18 +49,31 @@ function findVisibleScheduleLink(classId: ClassId) {
       : ".mat-schedule__mobile",
   );
 
+  const matchingLinks = Array.from(
+    scheduleView?.querySelectorAll<HTMLAnchorElement>("[data-schedule-class]") ?? [],
+  ).filter((link) => link.dataset.scheduleClass === classId);
+
+  if (window.matchMedia("(min-width: 1024px)").matches) {
+    return matchingLinks[0] ?? null;
+  }
+
   return (
-    Array.from(
-      scheduleView?.querySelectorAll<HTMLAnchorElement>("[data-schedule-class]") ?? [],
-    ).find((link) => link.dataset.scheduleClass === classId) ?? null
+    getScheduleDayOrder(timezone)
+      .flatMap((dayId) =>
+        matchingLinks.filter(
+          (link) =>
+            link.closest<HTMLElement>("[data-schedule-day]")?.dataset.scheduleDay === dayId,
+        ),
+      )
+      .at(0) ?? matchingLinks[0] ?? null
   );
 }
 
-function moveToSchedule(classId: ClassId) {
+function moveToSchedule(classId: ClassId, timezone: string) {
   window.history.pushState(null, "", "#horarios");
 
   window.requestAnimationFrame(() => {
-    const target = findVisibleScheduleLink(classId);
+    const target = findVisibleScheduleLink(classId, timezone);
 
     if (!target) {
       return;
@@ -80,7 +94,7 @@ function moveToSchedule(classId: ClassId) {
     let scrolledTarget: HTMLAnchorElement | null = null;
     let scrollPasses = 0;
     const focusWhenInteractive = () => {
-      const currentTarget = findVisibleScheduleLink(classId);
+      const currentTarget = findVisibleScheduleLink(classId, timezone);
       const currentDisclosure = currentTarget?.closest<HTMLDetailsElement>(".mat-schedule-day");
       const currentExpansion = currentTarget?.closest<HTMLElement>(
         ".mat-disclosure__expansion",
@@ -123,7 +137,13 @@ function moveToSchedule(classId: ClassId) {
   });
 }
 
-export function ClassScheduleNavigationProvider({ children }: { children: ReactNode }) {
+export function ClassScheduleNavigationProvider({
+  children,
+  scheduleTimezone,
+}: {
+  children: ReactNode;
+  scheduleTimezone: string;
+}) {
   const [selectedClass, setSelectedClass] = useState<SelectedScheduleClass | null>(null);
 
   useEffect(() => {
@@ -144,9 +164,9 @@ export function ClassScheduleNavigationProvider({ children }: { children: ReactN
 
   useEffect(() => {
     if (selectedClass) {
-      moveToSchedule(selectedClass.id);
+      moveToSchedule(selectedClass.id, scheduleTimezone);
     }
-  }, [selectedClass]);
+  }, [scheduleTimezone, selectedClass]);
 
   const clearSelection = useCallback(() => {
     setSelectedClass(null);

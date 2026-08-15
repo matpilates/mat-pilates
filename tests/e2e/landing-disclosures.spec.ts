@@ -139,6 +139,7 @@ test("class cards keep a single disclosure open", async ({ page }) => {
 });
 
 test("class and schedule disclosures use intrinsic motion without clipping", { tag: "@cross-browser" }, async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-08-16T12:00:00-03:00") });
   await page.emulateMedia({ reducedMotion: "no-preference" });
 
   for (const viewport of [
@@ -200,6 +201,7 @@ test("class and schedule disclosures use intrinsic motion without clipping", { t
 });
 
 test("reduced motion makes class and schedule disclosure changes instant", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-08-16T12:00:00-03:00") });
   await page.emulateMedia({ reducedMotion: "reduce" });
 
   for (const viewport of [
