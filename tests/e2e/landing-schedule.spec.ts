@@ -528,7 +528,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     .poll(() =>
       page.evaluate(() => {
         const target = document.querySelector<HTMLElement>(
-          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
         )!;
         const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
         const targetStyles = getComputedStyle(target);
@@ -551,7 +551,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
       .querySelector<HTMLElement>(".mat-schedule-selection")!
       .getBoundingClientRect();
     const targetElement = document.querySelector<HTMLElement>(
-      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
     )!;
     const target = targetElement.getBoundingClientRect();
     const targetStyles = getComputedStyle(targetElement);
@@ -674,7 +674,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     .poll(() =>
       page.evaluate(() => {
         const target = document.querySelector<HTMLElement>(
-          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
         )!;
         const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
         const targetStyles = getComputedStyle(target);
