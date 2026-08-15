@@ -263,6 +263,79 @@ test(
 );
 
 test(
+  "desktop prioritizes the current day while preserving every selected occurrence",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-14T12:00:00-03:00"));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openLanding(page);
+
+    const matPilatesCard = page.locator("#clase-mat-pilates");
+    await matPilatesCard.locator("summary").click();
+    await matPilatesCard
+      .getByRole("link", { name: "Ver horarios de MAT PILATES" })
+      .click();
+
+    const selectedLinks = page.locator(
+      '.mat-schedule__desktop [data-schedule-class="mat-pilates"][data-schedule-selected="true"]',
+    );
+    const focusedLink = page.locator(
+      '.mat-schedule__desktop [data-schedule-class="mat-pilates"][data-schedule-selected="true"]:focus',
+    );
+
+    await expect(selectedLinks).toHaveCount(7);
+    await expect(focusedLink).toHaveCount(1);
+    await expect(focusedLink).toBeFocused();
+    await expect
+      .poll(() =>
+        focusedLink.evaluate(
+          (link) => link.closest<HTMLElement>("[data-schedule-day]")?.dataset.scheduleDay,
+        ),
+      )
+      .toBe("friday");
+  },
+);
+
+test(
+  "desktop falls forward to the next available day and wraps Sunday to Monday",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-08-14T12:00:00-03:00"));
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await openLanding(page);
+
+    const selectHotBooty = async () => {
+      const hotBootyCard = page.locator("#clase-hot-booty");
+      await hotBootyCard.locator("summary").click();
+      await hotBootyCard
+        .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
+        .click();
+
+      const focusedLink = page.locator(
+        '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
+      );
+
+      await expect(focusedLink).toHaveCount(1);
+      await expect(focusedLink).toBeFocused();
+
+      return focusedLink.evaluate(
+        (link) => link.closest<HTMLElement>("[data-schedule-day]")?.dataset.scheduleDay,
+      );
+    };
+
+    await expect.poll(selectHotBooty).toBe("monday");
+
+    await page.clock.setFixedTime(new Date("2026-08-16T12:00:00-03:00"));
+    await page.reload();
+    await openLanding(page);
+
+    await expect.poll(selectHotBooty).toBe("monday");
+  },
+);
+
+test(
   "weekly schedule renders the confirmed data without duplicate day-time slots",
   { tag: ["@smoke", "@cross-browser"] },
   async ({ page }) => {
@@ -407,6 +480,7 @@ test("schedule accordions are exclusive and class links reveal their catalog car
 });
 
 test("desktop class-to-schedule selection preserves the reverse catalog link", async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-08-14T12:00:00-03:00"));
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1765, height: 320 });
   await openLanding(page);
@@ -429,12 +503,15 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   const selectedLinks = page.locator(
     '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
   );
-  const firstSelectedLink = selectedLinks.first();
+  const focusedSelectedLink = page.locator(
+    '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
+  );
   const scheduleHeading = page.locator(".mat-schedule__heading");
   const selectionStatus = page.locator(".mat-schedule-selection");
 
   await expect(selectedLinks).toHaveCount(4);
-  await expect(firstSelectedLink).toBeFocused();
+  await expect(focusedSelectedLink).toHaveCount(1);
+  await expect(focusedSelectedLink).toBeFocused();
   await expect(scheduleHeading).toHaveCSS("position", "static");
   await expect(selectionStatus).toHaveCSS("position", "sticky");
   await expect(selectionStatus).toContainText("Horarios de HOT BOOTY");
@@ -451,7 +528,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     .poll(() =>
       page.evaluate(() => {
         const target = document.querySelector<HTMLElement>(
-          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
         )!;
         const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
         const targetStyles = getComputedStyle(target);
@@ -474,7 +551,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
       .querySelector<HTMLElement>(".mat-schedule-selection")!
       .getBoundingClientRect();
     const targetElement = document.querySelector<HTMLElement>(
-      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
     )!;
     const target = targetElement.getBoundingClientRect();
     const targetStyles = getComputedStyle(targetElement);
@@ -514,8 +591,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     geometry.viewportHeight,
   );
 
-  await firstSelectedLink.evaluate((link) => link.blur());
-  const highStyles = await firstSelectedLink.evaluate((link) => {
+  const highStyles = await focusedSelectedLink.evaluate((link) => {
     const styles = getComputedStyle(link);
 
     return { backgroundColor: styles.backgroundColor, boxShadow: styles.boxShadow };
@@ -525,7 +601,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   expect(highStyles.boxShadow).toContain("rgb(250, 218, 221) 0px 0px 0px 2px");
   expect(highStyles.boxShadow).toContain("rgb(241, 237, 230) 6px 0px 0px 0px inset");
 
-  await firstSelectedLink.click();
+  await focusedSelectedLink.click();
 
   await expect(page).toHaveURL(/#clase-hot-booty$/);
   await expect(hotBootyCard).toHaveAttribute("open", "");
@@ -538,13 +614,10 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     .getByRole("link", { name: "Ver horarios de STRETCHING" })
     .click();
 
-  const lowSelectedLink = page
-    .locator(
-      '.mat-schedule__desktop [data-schedule-class="stretching"][data-schedule-selected="true"]',
-    )
-    .first();
+  const lowSelectedLink = page.locator(
+    '.mat-schedule__desktop [data-schedule-class="stretching"][data-schedule-selected="true"]:focus',
+  );
   await expect(lowSelectedLink).toBeFocused();
-  await lowSelectedLink.evaluate((link) => link.blur());
   const lowStyles = await lowSelectedLink.evaluate((link) => {
     const styles = getComputedStyle(link);
 
@@ -562,13 +635,10 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   await absOnCard.locator("summary").click();
   await absOnCard.getByRole("link", { name: "Ver horarios de ABS ON" }).click();
 
-  const moderateSelectedLink = page
-    .locator(
-      '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]',
-    )
-    .first();
+  const moderateSelectedLink = page.locator(
+    '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]:focus',
+  );
   await expect(moderateSelectedLink).toBeFocused();
-  await moderateSelectedLink.evaluate((link) => link.blur());
   const moderateStyles = await moderateSelectedLink.evaluate((link) => {
     const styles = getComputedStyle(link);
 
@@ -593,19 +663,18 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
     .getByRole("link", { name: "Ver horarios de HOT BOOTY" })
     .click();
 
-  const boundarySelectedLink = page
-    .locator(
-      '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
-    )
-    .first();
+  const boundarySelectedLink = page.locator(
+    '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
+  );
   await expect(page.locator(".mat-schedule__desktop")).toBeVisible();
   await expect(page.locator(".mat-schedule__mobile")).toBeHidden();
+  await expect(boundarySelectedLink).toHaveCount(1);
   await expect(boundarySelectedLink).toBeFocused();
   await expect
     .poll(() =>
       page.evaluate(() => {
         const target = document.querySelector<HTMLElement>(
-          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]',
+          '.mat-schedule__desktop [data-schedule-class="hot-booty"][data-schedule-selected="true"]:focus',
         )!;
         const dayHeader = document.querySelector<HTMLElement>(".mat-schedule-table__day")!;
         const targetStyles = getComputedStyle(target);
