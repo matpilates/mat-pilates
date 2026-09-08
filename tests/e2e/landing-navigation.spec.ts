@@ -10,6 +10,63 @@ const mobileMenuDestinations = [
   { name: "Conocé cómo sumarte", href: "#contacto" },
 ] as const;
 
+async function expectPromiseWithin<T>(promise: Promise<T>, timeoutMs: number) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("Functional readiness exceeded its time bound.")),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+test(
+  "functional readiness does not wait for an offscreen gallery image",
+  { tag: "@cross-browser" },
+  async ({ page }) => {
+    let releaseImage: () => void = () => undefined;
+    let markImageRequested: () => void = () => undefined;
+    const imageReleased = new Promise<void>((resolve) => {
+      releaseImage = resolve;
+    });
+    const imageRequested = new Promise<void>((resolve) => {
+      markImageRequested = resolve;
+    });
+
+    await page.route(
+      /\/_next\/image\?.*mat-pilates-studio-equipment-shelf-floor\.png/,
+      async (route) => {
+        markImageRequested();
+        await imageReleased;
+        await route.continue();
+      },
+    );
+
+    const landingReady = openLanding(page);
+
+    try {
+      await expectPromiseWithin(imageRequested, 5_000);
+      const runtimeErrors = await expectPromiseWithin(landingReady, 5_000);
+      expect(runtimeErrors).toEqual([]);
+      await expect(
+        page.getByRole("heading", { name: "No se trata solo de entrenar." }),
+      ).toBeVisible();
+    } finally {
+      releaseImage();
+    }
+  },
+);
+
 test("mobile menu restores focus when dismissed", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openLanding(page);

@@ -11,8 +11,8 @@ export async function openLanding(page: Page) {
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
 
   await page.route(/https:\/\/www\.google\.com\/maps\/embed.*/, (route) => route.abort());
-  // Functional coverage waits for page load and hydration; visual suites own exact font readiness.
-  await page.goto("/", { waitUntil: "load" });
+  // Functional coverage waits for explicit hydration signals; visual suites own exact asset readiness.
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await expectDisclosuresReady(page.locator("details[data-disclosure-group]"));
   await page.evaluate(
     () =>
