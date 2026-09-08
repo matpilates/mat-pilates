@@ -39,6 +39,7 @@ test("summarizes normalized workflow-run and job arrays", async () => {
       name: "CI - dev pull request",
       conclusion: "success",
       created_at: "2026-08-10T10:00:00Z",
+      run_started_at: "2026-08-10T10:00:00Z",
       updated_at: "2026-08-10T10:02:00Z",
       run_attempt: 1,
     },
@@ -47,6 +48,7 @@ test("summarizes normalized workflow-run and job arrays", async () => {
       name: "CI - dev pull request",
       conclusion: "failure",
       created_at: "2026-08-10T11:00:00Z",
+      run_started_at: "2026-08-10T11:02:00Z",
       updated_at: "2026-08-10T11:04:00Z",
       run_attempt: 2,
     },
@@ -55,6 +57,7 @@ test("summarizes normalized workflow-run and job arrays", async () => {
       name: "CI - release",
       conclusion: "cancelled",
       created_at: "2026-08-09T09:00:00Z",
+      run_started_at: "2026-08-09T09:00:00Z",
       updated_at: "2026-08-09T09:05:00Z",
       run_attempt: 1,
     },
@@ -75,11 +78,48 @@ test("summarizes normalized workflow-run and job arrays", async () => {
       run_attempt: 1,
     },
   ];
-  const jobs = [
-    { name: "Dev lint and build", conclusion: "failure" },
-    { name: "Dev functional tests", conclusion: "timed_out" },
-    { name: "CI dev gate", conclusion: "skipped" },
-  ];
+  const jobsByRun = new Map([
+    [
+      1,
+      [
+        {
+          name: "Dev lint and build",
+          conclusion: "success",
+          started_at: "2026-08-10T10:00:10Z",
+          completed_at: "2026-08-10T10:00:50Z",
+          steps: [{ name: "Check out repository" }],
+        },
+        {
+          name: "Dev functional tests",
+          conclusion: "success",
+          started_at: "2026-08-10T10:00:30Z",
+          completed_at: "2026-08-10T10:01:50Z",
+          steps: [{ name: "Check out repository" }],
+        },
+      ],
+    ],
+    [
+      2,
+      [
+        {
+          name: "Dev lint and build",
+          conclusion: "failure",
+          started_at: "2026-08-10T11:02:30Z",
+          completed_at: "2026-08-10T11:03:30Z",
+          steps: [{ name: "Check out repository" }],
+        },
+        {
+          name: "Dev functional tests",
+          conclusion: "timed_out",
+          started_at: "2026-08-10T11:03:00Z",
+          completed_at: "2026-08-10T11:04:00Z",
+          steps: [{ name: "Check out repository" }],
+        },
+        { name: "CI dev gate", conclusion: "skipped", steps: [] },
+      ],
+    ],
+    [3, []],
+  ]);
   const github = {
     rest: {
       actions: {
@@ -91,8 +131,7 @@ test("summarizes normalized workflow-run and job arrays", async () => {
       calls.push({ endpoint, parameters });
       if (endpoint === listWorkflowRunsForRepo) return workflowRuns;
       assert.equal(endpoint, listJobsForWorkflowRun);
-      assert.equal(parameters.run_id, 2);
-      return jobs;
+      return jobsByRun.get(parameters.run_id) ?? [];
     },
   };
 
@@ -103,13 +142,17 @@ test("summarizes normalized workflow-run and job arrays", async () => {
     now,
   });
 
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 4);
   assert.equal(calls[0].parameters.created, ">=2026-08-04");
   assert.deepEqual(summary.tables[0].slice(1), [
-    ["CI - dev pull request", "2", "2 min", "4 min", "1", "0", "50%"],
-    ["CI - release", "1", "5 min", "5 min", "0", "1", "0%"],
+    ["CI - dev pull request", "2", "2 min", "2 min", "2 min", "4 min", "1", "0", "50%"],
+    ["CI - release", "1", "5 min", "5 min", "5 min", "5 min", "0", "1", "0%"],
   ]);
   assert.deepEqual(summary.tables[1].slice(1), [
+    ["CI - dev pull request", "0.5 min", "1 min", "1 min", "1.3 min"],
+    ["CI - release", "0 min", "0 min", "0 min", "0 min"],
+  ]);
+  assert.deepEqual(summary.tables[2].slice(1), [
     ["Dev lint and build", "1"],
     ["Dev functional tests", "1"],
   ]);
@@ -141,8 +184,12 @@ test("reports an empty measured period without querying jobs", async () => {
   });
 
   assert.deepEqual(summary.tables[0].slice(1), [
-    ["CI - dev pull request", "0", "0 min", "0 min", "0", "0", "0%"],
-    ["CI - release", "0", "0 min", "0 min", "0", "0", "0%"],
+    ["CI - dev pull request", "0", "0 min", "0 min", "0 min", "0 min", "0", "0", "0%"],
+    ["CI - release", "0", "0 min", "0 min", "0 min", "0 min", "0", "0", "0%"],
+  ]);
+  assert.deepEqual(summary.tables[1].slice(1), [
+    ["CI - dev pull request", "0 min", "0 min", "0 min", "0 min"],
+    ["CI - release", "0 min", "0 min", "0 min", "0 min"],
   ]);
   assert.match(summary.raws.join(""), /No failed jobs/);
   assert.equal(summary.writes, 1);

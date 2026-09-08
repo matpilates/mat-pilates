@@ -34,10 +34,10 @@ npm run test:gate:dev
 The `CI - release` workflow runs the release evidence in parallel:
 
 - lint and production build;
-- all functional scenarios in Chromium, Firefox, and WebKit;
+- all functional scenarios in independent one-worker Chromium, Firefox, and WebKit jobs;
 - visual regression against the approved Windows Chromium baselines.
 
-`CI release gate` is the only required GitHub Actions check for this lane. Vercel and the protected review remain separate requirements. A 20-to-40-minute release gate can be acceptable because it runs once for an authorized promotion, not once for every small change.
+`CI release gate` is the only required GitHub Actions check for this lane. Vercel and the protected review remain separate requirements. The target elapsed time is under 6 minutes under normal GitHub Actions capacity.
 
 The local sequential equivalent is:
 
@@ -49,7 +49,7 @@ Both local gate commands force one Playwright worker to match CI. The ordinary f
 
 ### Manual validation
 
-`Manual validation` runs the same exhaustive technical evidence on demand, but every job and its result use names that differ from protected checks. A manual run is supporting diagnostic evidence only: it never replaces `CI dev gate`, `CI release gate`, Vercel, or a required review on the current Pull Request head.
+`Manual validation` runs the same exhaustive technical evidence and per-browser matrix on demand, but every job and its result use names that differ from protected checks. A manual run is supporting diagnostic evidence only: it never replaces `CI dev gate`, `CI release gate`, Vercel, or a required review on the current Pull Request head.
 
 ## Reading required-check states
 
@@ -78,12 +78,15 @@ For a deterministic failure, reproduce the affected test and browser locally bef
 The scheduled `CI metrics` workflow writes a weekly Actions summary for `CI - dev pull request` and `CI - release`. It reports:
 
 - completed run count;
-- median and p95 duration, including queue time;
+- median and p95 duration for the current attempt;
+- median and p95 end-to-end duration, including earlier attempts and recovery gaps;
+- median and p95 delay until the slowest validation job starts;
+- median and p95 execution time of the critical validation job;
 - failures and cancellations;
 - rerun rate;
 - failed-job frequency.
 
-Review the report weekly while stabilizing the workflow, then at least monthly. Investigate a dev-gate p95 above 10 minutes, repeated reruns, or the same job failing more than once in the seven-day window. Cancellations caused by a newer commit are tracked separately from failures.
+Review the report weekly while stabilizing the workflow, then at least monthly. Investigate a dev-gate attempt p95 above 10 minutes, a release-gate attempt p95 above 8 minutes, repeated reruns, or the same job failing more than once in the seven-day window. Use end-to-end and job-start measurements to distinguish recovery or runner-capacity delays from repository execution time. Cancellations caused by a newer commit are tracked separately from failures.
 
 ## References
 
