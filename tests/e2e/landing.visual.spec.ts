@@ -100,7 +100,7 @@ test.describe("@visual landing snapshots", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await prepareVisualPage(page);
 
-    const classCard = page.locator("#clase-mat-pilates");
+    const classCard = page.locator("#clase-hot-mat-pilates");
     await classCard.locator("summary").click();
 
     await expect(classCard).toHaveScreenshot("mobile-class-schedule-disclosure.png", {
@@ -136,15 +136,15 @@ test.describe("@visual landing snapshots", () => {
       await document.fonts.ready;
     });
 
-    const desktopCard = page.locator("#clase-abs-on");
+    const desktopCard = page.locator("#clase-hot-mat-pilates");
     await desktopCard.locator("summary").click();
     await desktopCard
-      .getByRole("link", { name: "Ver horarios de ABS ON" })
+      .getByRole("link", { name: "Ver horarios de HOT MAT PILATES" })
       .click();
 
     const desktopSelectedLink = page
       .locator(
-        '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]',
+        '.mat-schedule__desktop [data-schedule-class="hot-mat-pilates"][data-schedule-selected="true"]',
       )
       .first();
 

@@ -151,7 +151,7 @@ test("class and schedule disclosures use intrinsic motion without clipping", { t
     const runtimeErrors = await openLanding(page);
     expect(runtimeErrors).toEqual([]);
 
-    const classCard = page.locator("#clase-mat-pilates");
+    const classCard = page.locator("#clase-hot-mat-pilates");
     const scheduleDay = page.locator(".mat-schedule__mobile .mat-schedule-day").last();
     const classSummary = classCard.locator("summary");
     const scheduleSummary = scheduleDay.locator("summary");
@@ -213,7 +213,7 @@ test("reduced motion makes class and schedule disclosure changes instant", async
     const runtimeErrors = await openLanding(page);
     expect(runtimeErrors).toEqual([]);
 
-    const classCard = page.locator("#clase-mat-pilates");
+    const classCard = page.locator("#clase-hot-mat-pilates");
     const scheduleDay = page.locator(".mat-schedule__mobile .mat-schedule-day").last();
 
     expectDisclosureDuration(await readDisclosureMotion(classCard), "0s");
@@ -288,22 +288,22 @@ test("class and schedule links remain usable during disclosure transitions", { t
   await page.setViewportSize({ width: 390, height: 844 });
   await openLanding(page);
 
-  const classCard = page.locator("#clase-mat-pilates");
+  const classCard = page.locator("#clase-hot-mat-pilates");
   await classCard.locator("summary").click();
   const classScheduleLink = classCard.getByRole("link", {
-    name: "Ver horarios de MAT PILATES",
+    name: "Ver horarios de HOT MAT PILATES",
   });
   await classScheduleLink.focus();
   await classScheduleLink.press("Enter");
 
   await expect(page).toHaveURL(/#horarios$/);
   const scheduleLink = page.locator(
-    '.mat-schedule__mobile [data-schedule-class="mat-pilates"]',
+    '.mat-schedule__mobile [data-schedule-class="hot-mat-pilates"]',
   ).first();
   await expect(scheduleLink).toBeFocused();
   await scheduleLink.press("Enter");
 
-  await expect(page).toHaveURL(/#clase-mat-pilates$/);
+  await expect(page).toHaveURL(/#clase-hot-mat-pilates$/);
   await expect(classCard).toHaveAttribute("open", "");
   await expect(classCard.locator("summary")).toBeFocused();
 });
