@@ -28,15 +28,61 @@ module.exports = async function runCiMetrics({ github, context, core, now = Date
   const minutes = (milliseconds) =>
     Math.round((milliseconds / 60000) * 10) / 10;
 
+  const elapsed = (start, end) =>
+    Math.max(0, new Date(end).getTime() - new Date(start).getTime());
+
+  const jobsByRun = new Map();
+  for (const run of recentRuns) {
+    const jobs = await github.paginate(
+      github.rest.actions.listJobsForWorkflowRun,
+      {
+        ...context.repo,
+        run_id: run.id,
+        filter: "latest",
+        per_page: 100,
+      },
+    );
+    jobsByRun.set(run.id, jobs);
+  }
+
   const workflowRows = [];
+  const executionRows = [];
   for (const workflowName of trackedWorkflows) {
     const workflowRuns = recentRuns.filter(
       (run) => run.name === workflowName,
     );
-    const durations = workflowRuns.map((run) =>
-      new Date(run.updated_at).getTime() -
-      new Date(run.created_at).getTime(),
+    const endToEndDurations = workflowRuns.map((run) =>
+      elapsed(run.created_at, run.updated_at),
     );
+    const attemptDurations = workflowRuns.map((run) =>
+      elapsed(run.run_started_at ?? run.created_at, run.updated_at),
+    );
+    const runExecution = workflowRuns
+      .map((run) => {
+        const attemptStart = run.run_started_at ?? run.created_at;
+        const validationJobs = (jobsByRun.get(run.id) ?? []).filter(
+          (job) =>
+            job.started_at &&
+            job.completed_at &&
+            job.steps?.some((step) => step.name === "Check out repository"),
+        );
+
+        if (validationJobs.length === 0) return null;
+
+        return {
+          criticalJob: Math.max(
+            ...validationJobs.map((job) =>
+              elapsed(job.started_at, job.completed_at),
+            ),
+          ),
+          maxStartDelay: Math.max(
+            ...validationJobs.map((job) =>
+              elapsed(attemptStart, job.started_at),
+            ),
+          ),
+        };
+      })
+      .filter(Boolean);
     const failures = workflowRuns.filter(
       (run) => run.conclusion === "failure",
     ).length;
@@ -49,29 +95,29 @@ module.exports = async function runCiMetrics({ github, context, core, now = Date
     workflowRows.push([
       workflowName,
       String(workflowRuns.length),
-      `${minutes(percentile(durations, 0.5))} min`,
-      `${minutes(percentile(durations, 0.95))} min`,
+      `${minutes(percentile(attemptDurations, 0.5))} min`,
+      `${minutes(percentile(attemptDurations, 0.95))} min`,
+      `${minutes(percentile(endToEndDurations, 0.5))} min`,
+      `${minutes(percentile(endToEndDurations, 0.95))} min`,
       `${failures}`,
       `${cancellations}`,
       workflowRuns.length === 0
         ? "0%"
         : `${Math.round((reruns / workflowRuns.length) * 100)}%`,
     ]);
+    executionRows.push([
+      workflowName,
+      `${minutes(percentile(runExecution.map((run) => run.maxStartDelay), 0.5))} min`,
+      `${minutes(percentile(runExecution.map((run) => run.maxStartDelay), 0.95))} min`,
+      `${minutes(percentile(runExecution.map((run) => run.criticalJob), 0.5))} min`,
+      `${minutes(percentile(runExecution.map((run) => run.criticalJob), 0.95))} min`,
+    ]);
   }
 
   const failedJobs = new Map();
   for (const run of recentRuns) {
     if (run.conclusion !== "failure") continue;
-    const jobs = await github.paginate(
-      github.rest.actions.listJobsForWorkflowRun,
-      {
-        ...context.repo,
-        run_id: run.id,
-        filter: "latest",
-        per_page: 100,
-      },
-    );
-    for (const job of jobs) {
+    for (const job of jobsByRun.get(run.id) ?? []) {
       if (!["failure", "timed_out"].includes(job.conclusion)) continue;
       failedJobs.set(job.name, (failedJobs.get(job.name) ?? 0) + 1);
     }
@@ -83,13 +129,26 @@ module.exports = async function runCiMetrics({ github, context, core, now = Date
       [
         { data: "Workflow", header: true },
         { data: "Runs", header: true },
-        { data: "Median", header: true },
-        { data: "P95", header: true },
+        { data: "Attempt median", header: true },
+        { data: "Attempt p95", header: true },
+        { data: "End-to-end median", header: true },
+        { data: "End-to-end p95", header: true },
         { data: "Failures", header: true },
         { data: "Cancelled", header: true },
         { data: "Rerun rate", header: true },
       ],
       ...workflowRows,
+    ])
+    .addHeading("Execution breakdown", 2)
+    .addTable([
+      [
+        { data: "Workflow", header: true },
+        { data: "Max job start median", header: true },
+        { data: "Max job start p95", header: true },
+        { data: "Critical job median", header: true },
+        { data: "Critical job p95", header: true },
+      ],
+      ...executionRows,
     ])
     .addHeading("Failed jobs", 2);
 
@@ -108,7 +167,7 @@ module.exports = async function runCiMetrics({ github, context, core, now = Date
   }
 
   core.summary.addRaw(
-    "Durations include queue time. Cancelled superseded PR runs are reported separately from failures.\n",
+    "Attempt duration starts at the current attempt's `run_started_at`; end-to-end duration starts at the original run creation and therefore includes earlier attempts and recovery gaps. Max job start measures the slowest validation job's start relative to the current attempt. Critical job is the longest validation job execution. Cancelled superseded PR runs are reported separately from failures.\n",
   );
   await core.summary.write();
 };
