@@ -35,10 +35,10 @@ test("class cards derive their schedule summaries from the published week", asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await openLanding(page);
 
-  const matPilatesCard = page.locator("#clase-mat-pilates");
-  await matPilatesCard.locator("summary").click();
+  const hotMatPilatesCard = page.locator("#clase-hot-mat-pilates");
+  await hotMatPilatesCard.locator("summary").click();
 
-  const scheduleDays = await matPilatesCard
+  const scheduleDays = await hotMatPilatesCard
     .locator(".mat-class-card__schedule-day")
     .evaluateAll((rows) =>
       rows.map((row) => ({
@@ -49,29 +49,28 @@ test("class cards derive their schedule summaries from the published week", asyn
     );
 
   expect(scheduleDays).toEqual([
-    { day: "Lunes", shortDay: "Lun", times: ["08.00"] },
-    { day: "Martes", shortDay: "Mar", times: ["08.00", "09.00"] },
-    { day: "Miércoles", shortDay: "Mie", times: ["08.00"] },
-    { day: "Jueves", shortDay: "Jue", times: ["08.00"] },
-    { day: "Viernes", shortDay: "Vie", times: ["08.00", "16.00"] },
+    { day: "Lunes", shortDay: "Lun", times: ["17.00"] },
+    { day: "Martes", shortDay: "Mar", times: ["19.00"] },
+    { day: "Miércoles", shortDay: "Mie", times: ["17.00"] },
+    { day: "Viernes", shortDay: "Vie", times: ["11.00"] },
   ]);
-  await expect(matPilatesCard.getByText("Horarios", { exact: true })).toBeVisible();
+  await expect(hotMatPilatesCard.getByText("Horarios", { exact: true })).toBeVisible();
   await expect(
-    matPilatesCard.getByRole("link", {
-      name: "Ver horarios de MAT PILATES",
+    hotMatPilatesCard.getByRole("link", {
+      name: "Ver horarios de HOT MAT PILATES",
     }),
   ).toHaveAttribute("href", "#horarios");
-  const matPilatesExperienceCta = matPilatesCard.getByRole("link", {
-    name: "Quiero la experiencia MAT PILATES",
+  const hotMatPilatesExperienceCta = hotMatPilatesCard.getByRole("link", {
+    name: "Quiero la experiencia HOT MAT PILATES",
   });
-  await expect(matPilatesExperienceCta).toHaveText("Quiero esta experiencia");
+  await expect(hotMatPilatesExperienceCta).toHaveText("Quiero esta experiencia");
 
-  const matPilatesExperienceHref = await matPilatesExperienceCta.getAttribute("href");
-  expect(matPilatesExperienceHref).not.toBeNull();
-  expect(new URL(matPilatesExperienceHref!).searchParams.get("text")).toBe(
-    "Hola, quiero sumarme a MAT. Me interesa MAT PILATES.",
+  const hotMatPilatesExperienceHref = await hotMatPilatesExperienceCta.getAttribute("href");
+  expect(hotMatPilatesExperienceHref).not.toBeNull();
+  expect(new URL(hotMatPilatesExperienceHref!).searchParams.get("text")).toBe(
+    "Hola, quiero sumarme a MAT. Me interesa HOT MAT PILATES.",
   );
-  const ctaLayout = await matPilatesCard.locator(".mat-class-card__cta").evaluateAll((ctas) =>
+  const ctaLayout = await hotMatPilatesCard.locator(".mat-class-card__cta").evaluateAll((ctas) =>
     ctas.map((cta) => {
       const styles = getComputedStyle(cta);
       return {
@@ -87,27 +86,8 @@ test("class cards derive their schedule summaries from the published week", asyn
     { hasOverflow: false, justifySelf: "center", whiteSpace: "nowrap", width: "256px" },
   ]);
 
-  const yogaCard = page.locator("#clase-yoga");
-  await yogaCard.locator("summary").click();
-  await expect(yogaCard.locator(".mat-class-card__schedule")).toHaveCount(0);
-  await expect(yogaCard.locator(".mat-class-card__schedule-link")).toHaveCount(0);
-  await expect(yogaCard.locator(".mat-class-card__cta")).toHaveCount(1);
-
-  const yogaInformationCta = yogaCard.getByRole("link", {
-    name: "Quiero información sobre YOGA",
-  });
-  await expect(yogaInformationCta).toHaveText("Quiero información");
-  await expect(yogaInformationCta).toHaveCSS("text-transform", "uppercase");
-
-  const yogaInformationHref = await yogaInformationCta.getAttribute("href");
-  expect(yogaInformationHref).not.toBeNull();
-
-  const yogaInformationUrl = new URL(yogaInformationHref!);
-  expect(yogaInformationUrl.hostname).toBe("wa.me");
-  expect(yogaInformationUrl.searchParams.get("text")).toBe(
-    "Hola, quiero información sobre YOGA.",
-  );
-  await expect(page.locator(".mat-class-card__schedule-link")).toHaveCount(10);
+  await expect(page.locator(".mat-class-card")).toHaveCount(4);
+  await expect(page.locator(".mat-class-card__schedule-link")).toHaveCount(4);
 
   const informationOnlyClassIds = await page.locator(".mat-class-card").evaluateAll((cards) =>
     cards
@@ -118,7 +98,7 @@ test("class cards derive their schedule summaries from the published week", asyn
       })
       .map((card) => card.id),
   );
-  expect(informationOnlyClassIds).toEqual(["clase-yoga"]);
+  expect(informationOnlyClassIds).toEqual([]);
 
   const occurrenceCounts = await page.evaluate(() => {
     const summaries = Object.fromEntries(
@@ -180,7 +160,7 @@ test(
     );
     const firstSelectedLink = selectedLinks.first();
 
-    await expect(selectedLinks).toHaveCount(4);
+    await expect(selectedLinks).toHaveCount(2);
     await expect(firstSelectedLink).toBeFocused();
     await expect(firstSelectedLink.locator("xpath=ancestor::details[1]")).toHaveAttribute(
       "open",
@@ -196,13 +176,7 @@ test(
         boxShadow: styles.boxShadow,
       };
     });
-    const comparisonBackground = await firstSelectedLink
-      .locator("xpath=ancestor::details[1]")
-      .locator('.mat-schedule__class-link--high:not([data-schedule-selected="true"])')
-      .first()
-      .evaluate((link) => getComputedStyle(link).backgroundColor);
-
-    expect(selectedStyles.backgroundColor).toBe(comparisonBackground);
+    expect(selectedStyles.backgroundColor).toBe("rgb(95, 27, 34)");
     expect(selectedStyles.boxShadow).toContain("rgb(95, 27, 34) 0px 0px 0px 2px");
     expect(selectedStyles.boxShadow).toContain("rgb(241, 237, 230) 6px 0px 0px 0px inset");
     expect(selectedStyles.boxShadow).toContain("rgb(241, 237, 230) 0px 0px 0px 3px inset");
@@ -246,7 +220,7 @@ test(
 
     await expect(page).toHaveURL(/#horarios$/);
     await expect(scheduleSelection).toContainText("Horarios de HOT SCULPT");
-    await expect(selectedLinks).toHaveCount(5);
+    await expect(selectedLinks).toHaveCount(6);
 
     await page.getByRole("button", { name: "Abrir menú" }).click();
     await page
@@ -266,7 +240,7 @@ test(
   "mobile class-to-schedule navigation prioritizes today and cycles through the week",
   { tag: "@cross-browser" },
   async ({ page }) => {
-    await page.clock.install({ time: new Date("2026-08-14T12:00:00-03:00") });
+    await page.clock.install({ time: new Date("2026-09-08T12:00:00-03:00") });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });
 
@@ -306,26 +280,26 @@ test(
 
     await openLanding(page);
     await expect(
-      selectClassAndReadFocusedSlot("mat-pilates", "MAT PILATES", 7),
+      selectClassAndReadFocusedSlot("hot-pilates-stretch", "HOT PILATES & STRETCH", 2),
+    ).resolves.toEqual({ day: "tuesday", isOpen: true, time: "09:00" });
+
+    await page.clock.setFixedTime(new Date("2026-09-10T12:00:00-03:00"));
+    await openLanding(page);
+    await expect(
+      selectClassAndReadFocusedSlot("hot-sculpt", "HOT SCULPT", 6),
     ).resolves.toEqual({ day: "friday", isOpen: true, time: "08:00" });
 
-    await page.clock.setFixedTime(new Date("2026-08-14T12:00:00-03:00"));
+    await page.clock.setFixedTime(new Date("2026-09-12T12:00:00-03:00"));
     await openLanding(page);
     await expect(
-      selectClassAndReadFocusedSlot("hot-sculpt", "HOT SCULPT", 5),
-    ).resolves.toEqual({ day: "saturday", isOpen: true, time: "10:00" });
+      selectClassAndReadFocusedSlot("hot-booty", "HOT BOOTY", 2),
+    ).resolves.toEqual({ day: "tuesday", isOpen: true, time: "18:00" });
 
-    await page.clock.setFixedTime(new Date("2026-08-15T12:00:00-03:00"));
+    await page.clock.setFixedTime(new Date("2026-09-13T12:00:00-03:00"));
     await openLanding(page);
     await expect(
-      selectClassAndReadFocusedSlot("abs-on", "ABS ON", 6),
-    ).resolves.toEqual({ day: "monday", isOpen: true, time: "15:00" });
-
-    await page.clock.setFixedTime(new Date("2026-08-16T12:00:00-03:00"));
-    await openLanding(page);
-    await expect(
-      selectClassAndReadFocusedSlot("hot-booty", "HOT BOOTY", 4),
-    ).resolves.toEqual({ day: "monday", isOpen: true, time: "18:00" });
+      selectClassAndReadFocusedSlot("hot-mat-pilates", "HOT MAT PILATES", 4),
+    ).resolves.toEqual({ day: "monday", isOpen: true, time: "17:00" });
   },
 );
 
@@ -344,14 +318,16 @@ test(
     );
 
     expect(dayLabels).toEqual(["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]);
-    expect(slotCounts).toEqual([12, 9, 9, 9, 9, 4]);
-    await expect(mobileSchedule.locator(".mat-schedule__class-link")).toHaveCount(52);
+    expect(slotCounts).toEqual([3, 4, 3, 1, 2, 1]);
+    await expect(mobileSchedule.locator(".mat-schedule__class-link")).toHaveCount(14);
     await expect(
       mobileSchedule.locator('.mat-schedule__class-link[class*="mat-schedule__class-link--"]'),
-    ).toHaveCount(52);
-    await expect(mobileSchedule.getByText("Yoga", { exact: true })).toHaveCount(0);
+    ).toHaveCount(14);
 
     await page.setViewportSize({ width: 1280, height: 720 });
+    const catalogColumnCount = await page.locator(".mat-class-catalog").evaluate((catalog) =>
+      getComputedStyle(catalog).gridTemplateColumns.split(" ").length,
+    );
     const table = page.locator(".mat-schedule-table");
     const coordinates = await table.locator("tbody td").evaluateAll((cells) =>
       cells
@@ -362,15 +338,16 @@ test(
         ),
     );
 
-    await expect(table.locator("tbody tr")).toHaveCount(12);
-    await expect(table.locator(".mat-schedule__class-link")).toHaveCount(52);
-    expect(new Set(coordinates).size).toBe(52);
+    expect(catalogColumnCount).toBe(2);
+    await expect(table.locator("tbody tr")).toHaveCount(6);
+    await expect(table.locator(".mat-schedule__class-link")).toHaveCount(14);
+    expect(new Set(coordinates).size).toBe(14);
     expect(runtimeErrors).toEqual([]);
   },
 );
 
 test("schedule reuses the catalog intensity colors and accessible labels", async ({ page }) => {
-  await page.clock.setFixedTime(new Date("2026-08-03T12:00:00-03:00"));
+  await page.clock.setFixedTime(new Date("2026-09-08T12:00:00-03:00"));
   await page.setViewportSize({ width: 390, height: 844 });
   await openLanding(page);
 
@@ -395,7 +372,7 @@ test("schedule reuses the catalog intensity colors and accessible labels", async
   await expect(desktopModerateLink).toHaveCSS("outline-offset", "4px");
 
   const intensityStyles = await page.evaluate(() =>
-    (["low", "moderate", "high"] as const).map((intensity) => {
+    (["moderate", "high"] as const).map((intensity) => {
       const chip = document.querySelector<HTMLElement>(
         `.mat-class-card__intensity--${intensity}`,
       )!;
@@ -422,10 +399,6 @@ test("schedule reuses the catalog intensity colors and accessible labels", async
     expect(styles.schedule).toEqual(styles.chip);
   }
 
-  await expect(page.locator(".mat-schedule__class-link--low").first()).toHaveAttribute(
-    "aria-label",
-    /intensidad baja/i,
-  );
   await expect(page.locator(".mat-schedule__class-link--moderate").first()).toHaveAttribute(
     "aria-label",
     /intensidad moderada/i,
@@ -466,9 +439,9 @@ test("schedule accordions are exclusive and class links reveal their catalog car
   await expect(days.nth(1)).toHaveAttribute("open", "");
 
   await days.nth(1).locator(".mat-schedule__class-link").first().click();
-  const classCard = page.locator("#clase-mat-pilates");
+  const classCard = page.locator("#clase-hot-pilates-stretch");
 
-  await expect(page).toHaveURL(/#clase-mat-pilates$/);
+  await expect(page).toHaveURL(/#clase-hot-pilates-stretch$/);
   await expect(classCard).toHaveAttribute("open", "");
   await expect(classCard.locator("summary")).toBeFocused();
 });
@@ -500,7 +473,7 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   const scheduleHeading = page.locator(".mat-schedule__heading");
   const selectionStatus = page.locator(".mat-schedule-selection");
 
-  await expect(selectedLinks).toHaveCount(4);
+  await expect(selectedLinks).toHaveCount(2);
   await expect(firstSelectedLink).toBeFocused();
   await expect(scheduleHeading).toHaveCSS("position", "static");
   await expect(selectionStatus).toHaveCSS("position", "sticky");
@@ -599,39 +572,15 @@ test("desktop class-to-schedule selection preserves the reverse catalog link", a
   await expect(hotBootyCard.locator("summary")).toBeFocused();
   await expect(page.locator(".mat-schedule-selection")).toHaveCount(0);
 
-  const stretchingCard = page.locator("#clase-stretching");
-  await stretchingCard.locator("summary").click();
-  await stretchingCard
-    .getByRole("link", { name: "Ver horarios de STRETCHING" })
+  const hotMatPilatesCard = page.locator("#clase-hot-mat-pilates");
+  await hotMatPilatesCard.locator("summary").click();
+  await hotMatPilatesCard
+    .getByRole("link", { name: "Ver horarios de HOT MAT PILATES" })
     .click();
-
-  const lowSelectedLink = page
-    .locator(
-      '.mat-schedule__desktop [data-schedule-class="stretching"][data-schedule-selected="true"]',
-    )
-    .first();
-  await expect(lowSelectedLink).toBeFocused();
-  await lowSelectedLink.evaluate((link) => link.blur());
-  const lowStyles = await lowSelectedLink.evaluate((link) => {
-    const styles = getComputedStyle(link);
-
-    return { backgroundColor: styles.backgroundColor, boxShadow: styles.boxShadow };
-  });
-
-  expect(lowStyles.backgroundColor).toBe("rgb(226, 217, 205)");
-  expect(lowStyles.boxShadow).toContain("rgb(250, 218, 221) 0px 0px 0px 2px");
-  expect(lowStyles.boxShadow).toContain("rgb(43, 43, 43) 6px 0px 0px 0px inset");
-
-  await lowSelectedLink.click();
-  await expect(stretchingCard).toHaveAttribute("open", "");
-
-  const absOnCard = page.locator("#clase-abs-on");
-  await absOnCard.locator("summary").click();
-  await absOnCard.getByRole("link", { name: "Ver horarios de ABS ON" }).click();
 
   const moderateSelectedLink = page
     .locator(
-      '.mat-schedule__desktop [data-schedule-class="abs-on"][data-schedule-selected="true"]',
+      '.mat-schedule__desktop [data-schedule-class="hot-mat-pilates"][data-schedule-selected="true"]',
     )
     .first();
   await expect(moderateSelectedLink).toBeFocused();
