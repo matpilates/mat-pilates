@@ -62,10 +62,12 @@ async function loadVisualContent(page: Page) {
   }
 
   await page.locator("#inicio").scrollIntoViewIfNeeded();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-  });
+  await expect
+    .poll(() => page.evaluate(() => document.fonts.status), { timeout: 10_000 })
+    .toBe("loaded");
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+  );
 }
 
 async function expectReducedMotionFallbacks(page: Page) {
