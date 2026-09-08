@@ -182,6 +182,16 @@ export const landingContent = {
 
 export const classCatalog = [
   {
+    id: "hot-mat-pilates",
+    isActive: true,
+    name: "HOT MAT PILATES",
+    tagline: "Fuerza, movilidad y flexibilidad.",
+    description:
+      "Pilates en mat, movimiento constante y calor. Una clase pensada para fortalecer, activar y trabajar el cuerpo de forma integral.",
+    intensity: "moderate",
+    environment: "hot",
+  },
+  {
     id: "hot-sculpt",
     isActive: true,
     name: "HOT SCULPT",
@@ -202,36 +212,6 @@ export const classCatalog = [
     environment: "hot",
   },
   {
-    id: "yoga",
-    isActive: false,
-    name: "YOGA",
-    tagline: "Movimiento, respiración y conexión.",
-    description:
-      "Una práctica que une respiración consciente, fuerza, equilibrio y flexibilidad. Ideal para reducir el estrés, mejorar la movilidad y conectar cuerpo y mente a través de secuencias fluidas y posturas sostenidas.",
-    intensity: "low",
-    environment: "room-temperature",
-  },
-  {
-    id: "hot-mat-burn",
-    isActive: true,
-    name: "HOT MAT BURN",
-    tagline: "Máxima intensidad. Máximos resultados.",
-    description:
-      "Una clase de alta intensidad diseñada para elevar la frecuencia cardíaca, fortalecer el cuerpo completo y mejorar la resistencia. Combina ejercicios dinámicos de Pilates Mat con un ritmo desafiante en una sala climatizada con calor e infrarrojos.",
-    intensity: "high",
-    environment: "hot",
-  },
-  {
-    id: "mat-pilates",
-    isActive: true,
-    name: "MAT PILATES",
-    tagline: "El método clásico, sin calor.",
-    description:
-      "Una clase de Pilates Mat realizada a temperatura ambiente que prioriza la técnica, el control, la respiración y la correcta ejecución de cada movimiento. Ideal para todos los niveles.",
-    intensity: "low",
-    environment: "room-temperature",
-  },
-  {
     id: "hot-booty",
     isActive: true,
     name: "HOT BOOTY",
@@ -240,56 +220,6 @@ export const classCatalog = [
       "Entrenamiento enfocado en glúteos, piernas y core mediante ejercicios específicos de Pilates y resistencia. El calor ayuda a crear una experiencia intensa y energizante mientras se trabaja la fuerza y la estabilidad.",
     intensity: "high",
     environment: "hot",
-  },
-  {
-    id: "hot-sweat",
-    isActive: true,
-    name: "HOT & SWEAT",
-    tagline: "Movete. Transpirá. Superate.",
-    description:
-      "Una clase intensa y dinámica que combina fuerza, resistencia y movimientos continuos para lograr un entrenamiento de cuerpo completo. Diseñada para quienes buscan desafiar sus límites y disfrutar de una sesión de alta energía en calor e infrarrojos.",
-    intensity: "high",
-    environment: "hot",
-  },
-  {
-    id: "abs-on",
-    isActive: true,
-    name: "ABS ON",
-    tagline: "Core activado de principio a fin.",
-    description:
-      "Clase enfocada en fortalecer el abdomen, la zona lumbar y toda la musculatura del core. Mejora la postura, el equilibrio y la estabilidad mediante ejercicios específicos e intensos realizados en una sala climatizada con calor e infrarrojos.",
-    intensity: "moderate",
-    environment: "hot",
-  },
-  {
-    id: "stretch-glow",
-    isActive: true,
-    name: "STRETCH GLOW",
-    tagline: "Movilidad, relajación y bienestar.",
-    description:
-      "Una experiencia enfocada en estirar, recuperar y liberar tensiones. A través de ejercicios de movilidad y estiramientos guiados, el calor y la tecnología infrarroja favorecen la relajación muscular y una agradable sensación de renovación.",
-    intensity: "low",
-    environment: "hot",
-  },
-  {
-    id: "sculpt-flow",
-    isActive: true,
-    name: "SCULPT & FLOW",
-    tagline: "Fuerza con movimiento fluido.",
-    description:
-      "Una clase que combina bloques de tonificación con secuencias continuas de Pilates Mat. Desarrolla fuerza, coordinación, equilibrio y flexibilidad en una experiencia dinámica y armoniosa, realizada con calor e infrarrojos.",
-    intensity: "moderate",
-    environment: "hot",
-  },
-  {
-    id: "stretching",
-    isActive: true,
-    name: "STRETCHING",
-    tagline: "Flexibilidad y recuperación.",
-    description:
-      "Clase dedicada a mejorar la movilidad, aumentar el rango de movimiento y aliviar la tensión muscular mediante estiramientos guiados. Ideal para complementar cualquier entrenamiento o simplemente regalarle al cuerpo un momento de recuperación.",
-    intensity: "low",
-    environment: "room-temperature",
   },
 ] as const satisfies readonly ClassOffering[];
 
