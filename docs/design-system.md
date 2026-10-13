@@ -133,6 +133,15 @@ Classes, schedule, and reservation use a 32 px vertical content inset in Mobile 
 
 The studio map is progressive, non-essential content. It is shown in landscape compositions that are at least 900 px wide and 600 px tall, occupies the full width of the studio copy column, and reserves at least 240 px before its lazy-loaded iframe mounts. Once visible, it grows to absorb the column's remaining vertical space while preserving its 32 px top margin, 16 px bottom margin, and the section's outer spacing. Narrower, shorter, and portrait compositions do not render or reserve space for the map. The address and `Cómo llegar` link remain available as the location fallback in every mode.
 
+### Footer studio credit
+
+The footer uses the official white VNT signature linked to VNT's Instagram. Its
+local Host Grotesk font is scoped to the credit and is not preloaded; MAT content
+retains Neue Montreal. On Mobile and Tablet, the credit shares a wrapping row with
+MAT's Instagram. At 1024 px and above, it sits below Instagram, aligned right.
+Both links have a minimum 44 px target. The credit remains above the legal block
+and its existing floating-WhatsApp clearance.
+
 ### Visual regression contract
 
 Playwright renders the production build with Chromium, the bundled Neue Montreal files, the `es-AR` locale, the Buenos Aires timezone, light color scheme, and reduced motion. Animations are disabled for screenshots. The external Google Maps rendering is masked, while its responsive presence is asserted independently.

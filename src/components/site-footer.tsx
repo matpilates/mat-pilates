@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { footerNavigationItems, siteContact } from "@/lib/site-content";
+import { VntSignature } from "./vnt-signature";
 import styles from "./site-footer.module.css";
 
 export function SiteFooter() {
@@ -23,9 +24,12 @@ export function SiteFooter() {
             ))}
           </ul>
         </nav>
-        <a className={styles["site-footer__instagram"]} href={siteContact.instagram.url} rel="noreferrer" target="_blank">
-          Instagram
-        </a>
+        <div className={styles["site-footer__social"]}>
+          <a className={styles["site-footer__instagram"]} href={siteContact.instagram.url} rel="noreferrer" target="_blank">
+            Instagram
+          </a>
+          <VntSignature />
+        </div>
       </div>
       <div className={styles["site-footer__legal"]}>
         <p className={styles["site-footer__location"]}>
