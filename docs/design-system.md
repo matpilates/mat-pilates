@@ -137,10 +137,15 @@ The studio map is progressive, non-essential content. It is shown in landscape c
 
 The footer uses the official white VNT signature linked to VNT's Instagram. Its
 local Host Grotesk font is scoped to the credit and is not preloaded; MAT content
-retains Neue Montreal. On Mobile and Tablet, the credit shares a wrapping row with
-MAT's Instagram. At 1024 px and above, it sits below Instagram, aligned right.
-Both links have a minimum 44 px target. The credit remains above the legal block
-and its existing floating-WhatsApp clearance.
+retains Neue Montreal. Below 768 px, the credit sits to the right of the MAT
+wordmark, centered vertically, and wraps below it when enlarged text needs more
+space. On Tablet, it shares a row with MAT's Instagram. At 1024 px and above,
+the footer has two levels separated by a subtle inverse border: MAT, wrapping
+navigation, and Instagram above; location and copyright on the left and the VNT
+credit on the right below. Desktop navigation and the location link have 44 px
+targets, and the lower copy wraps when text grows.
+Both links have a minimum 44 px target. Below 1024 px, the credit remains above
+the legal block and its existing floating-WhatsApp clearance.
 
 ### Visual regression contract
 
