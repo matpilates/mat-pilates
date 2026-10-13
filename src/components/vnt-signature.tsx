@@ -13,9 +13,10 @@ const hostGrotesk = localFont({
 export function VntSignature() {
   return (
     <a
-      aria-label="created by VNT — Instagram (se abre en otra pestaña)"
+      aria-label="Sitio web de VNT Agencia (abre en una nueva pestaña)"
       className={`${hostGrotesk.className} ${styles["site-vnt-signature"]}`}
-      href="https://www.instagram.com/vnt.agencia/"
+      data-vnt-signature="mat-pilates"
+      href="https://vntagencia.com/r/mat-pilates"
       rel="noopener noreferrer"
       target="_blank"
     >
