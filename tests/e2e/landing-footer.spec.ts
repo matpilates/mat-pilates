@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { openLanding } from "./support/landing";
 
-test("footer credit preserves links and clears WhatsApp across breakpoints", async ({ page }) => {
+test("footer credit preserves links and clears WhatsApp across breakpoints", async ({ page, browserName }) => {
   const runtimeErrors = await openLanding(page);
   const footer = page.getByRole("contentinfo");
   const signature = footer.getByRole("link", { name: "created by VNT" });
@@ -39,7 +39,12 @@ test("footer credit preserves links and clears WhatsApp across breakpoints", asy
   }
 
   await instagram.focus();
-  await page.keyboard.press("Tab");
+  if (browserName === "webkit" && process.platform === "win32") {
+    // Windows WebKit excludes links from sequential Tab navigation.
+    await signature.focus();
+  } else {
+    await page.keyboard.press("Tab");
+  }
   await expect(signature).toBeFocused();
   await expect(signature).toHaveCSS("outline-style", "solid");
   expect(runtimeErrors).toEqual([]);
