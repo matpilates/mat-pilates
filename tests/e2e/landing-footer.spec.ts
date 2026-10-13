@@ -5,7 +5,10 @@ test("footer credit preserves links and clears WhatsApp across breakpoints", asy
   const runtimeErrors = await openLanding(page);
   const footer = page.getByRole("contentinfo");
   const signature = footer.getByRole("link", { name: "created by VNT" });
+  const brand = footer.getByRole("link", { name: "MAT Pilates, inicio" });
   const instagram = footer.getByRole("link", { name: "Instagram", exact: true });
+  const location = footer.getByRole("link", { name: /MAT Pilates.*Canning/i });
+  const navigation = footer.getByRole("navigation");
 
   await expect(signature).toHaveAttribute("href", "https://www.instagram.com/vnt.agencia/");
   await expect(signature).toHaveAttribute("target", "_blank");
@@ -19,18 +22,30 @@ test("footer credit preserves links and clears WhatsApp across breakpoints", asy
     await expect(signature).toBeVisible();
     const creditBox = (await signature.boundingBox())!;
     const instagramBox = (await instagram.boundingBox())!;
+    const brandBox = (await brand.boundingBox())!;
     expect(creditBox.height).toBeGreaterThanOrEqual(44);
     expect(instagramBox.height).toBeGreaterThanOrEqual(44);
     expect(creditBox.x + creditBox.width).toBeLessThanOrEqual(width);
 
     if (width < 1024) {
-      expect(creditBox.x).toBeGreaterThanOrEqual(instagramBox.x + instagramBox.width + 8);
-      expect(Math.abs(creditBox.y - instagramBox.y)).toBeLessThanOrEqual(1);
+      if (width < 768) {
+        expect(creditBox.x).toBeGreaterThanOrEqual(brandBox.x + brandBox.width + 8);
+        expect(Math.abs(creditBox.y + creditBox.height / 2 - brandBox.y - brandBox.height / 2)).toBeLessThanOrEqual(1);
+        expect(instagramBox.y).toBeGreaterThanOrEqual(creditBox.y + creditBox.height);
+      } else {
+        expect(creditBox.x).toBeGreaterThanOrEqual(instagramBox.x + instagramBox.width + 8);
+        expect(Math.abs(creditBox.y - instagramBox.y)).toBeLessThanOrEqual(1);
+      }
       const whatsapp = page.getByRole("link", { name: "Ir a contacto por WhatsApp" });
       await expect(whatsapp).toBeVisible();
       const whatsappBox = (await whatsapp.boundingBox())!;
       expect(creditBox.y + creditBox.height + 8).toBeLessThanOrEqual(whatsappBox.y);
     } else {
+      const navigationBox = (await navigation.boundingBox())!;
+      const locationBox = (await location.boundingBox())!;
+      expect(Math.abs(instagramBox.y + instagramBox.height / 2 - brandBox.y - brandBox.height / 2)).toBeLessThanOrEqual(1);
+      expect(locationBox.y).toBeGreaterThanOrEqual(navigationBox.y + navigationBox.height + 24);
+      expect(creditBox.y).toBeGreaterThanOrEqual(locationBox.y);
       expect(creditBox.y).toBeGreaterThanOrEqual(instagramBox.y + instagramBox.height);
       expect(Math.abs(creditBox.x + creditBox.width - instagramBox.x - instagramBox.width)).toBeLessThanOrEqual(1);
     }
@@ -44,10 +59,36 @@ test("footer credit preserves links and clears WhatsApp across breakpoints", asy
     await signature.focus();
   } else {
     await page.keyboard.press("Tab");
+    await expect(location).toBeFocused();
+    await page.keyboard.press("Tab");
   }
   await expect(signature).toBeFocused();
   await expect(signature).toHaveCSS("outline-style", "solid");
   expect(runtimeErrors).toEqual([]);
+});
+
+test("desktop footer keeps both levels usable with enlarged text", async ({ page }) => {
+  await openLanding(page);
+  await page.addStyleTag({ content: "footer a, footer p, footer span { font-size: 2rem !important; line-height: 1.5 !important; }" });
+  const footer = page.getByRole("contentinfo");
+  const navigation = footer.getByRole("navigation");
+  const location = footer.getByRole("link", { name: /MAT Pilates.*Canning/i });
+  const signature = footer.getByRole("link", { name: "created by VNT" });
+
+  for (const width of [1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await footer.scrollIntoViewIfNeeded();
+    const navigationBox = (await navigation.boundingBox())!;
+    const locationBox = (await location.boundingBox())!;
+    const creditBox = (await signature.boundingBox())!;
+    expect(locationBox.y).toBeGreaterThanOrEqual(navigationBox.y + navigationBox.height + 24);
+    expect(locationBox.x + locationBox.width + 8).toBeLessThanOrEqual(creditBox.x);
+    expect(creditBox.x + creditBox.width).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const link of await footer.getByRole("link").all()) {
+      await expect(link).toBeVisible();
+    }
+  }
 });
 
 test("footer credit reflows with enlarged mobile text", async ({ page }) => {
@@ -57,9 +98,9 @@ test("footer credit reflows with enlarged mobile text", async ({ page }) => {
   const footer = page.getByRole("contentinfo");
   await footer.scrollIntoViewIfNeeded();
   const signature = footer.getByRole("link", { name: "created by VNT" });
-  const instagram = footer.getByRole("link", { name: "Instagram", exact: true });
+  const brand = footer.getByRole("link", { name: "MAT Pilates, inicio" });
   const creditBox = (await signature.boundingBox())!;
-  const instagramBox = (await instagram.boundingBox())!;
-  expect(creditBox.y).toBeGreaterThanOrEqual(instagramBox.y + instagramBox.height);
+  const brandBox = (await brand.boundingBox())!;
+  expect(creditBox.y).toBeGreaterThanOrEqual(brandBox.y + brandBox.height);
   expect(creditBox.x + creditBox.width).toBeLessThanOrEqual(320);
 });
