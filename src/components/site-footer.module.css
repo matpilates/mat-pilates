@@ -20,7 +20,7 @@
   grid-template-areas:
     "brand"
     "navigation"
-    "instagram";
+    "social";
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
@@ -63,8 +63,19 @@
   content: "-";
 }
 
+.site-footer__social {
+  display: flex;
+  flex-wrap: wrap;
+  grid-area: social;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
 .site-footer__instagram {
-  grid-area: instagram;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   font-size: var(--mat-font-size-16);
   line-height: 24px;
 }
@@ -120,7 +131,7 @@
     column-gap: 32px;
     grid-template-areas:
       "brand navigation"
-      "instagram instagram";
+      "social social";
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
   }
@@ -134,6 +145,8 @@
   }
 
   .site-footer__legal {
+    /* Keep the credit's touch target above the floating WhatsApp button. */
+    min-height: 44px;
     gap: 24px;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
@@ -159,7 +172,7 @@
 
   .site-footer__links {
     column-gap: clamp(32px, 4vw, 64px);
-    grid-template-areas: "brand navigation instagram";
+    grid-template-areas: "brand navigation social";
     grid-template-columns: 140px minmax(0, 1fr) auto;
   }
 
@@ -183,11 +196,14 @@
     gap: clamp(20px, 3vw, 44px);
   }
 
-  .site-footer__instagram {
-    justify-self: end;
+  .site-footer__social {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
   }
 
   .site-footer__legal {
+    min-height: 0;
     gap: clamp(24px, 3vw, 48px);
   }
 
