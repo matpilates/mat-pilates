@@ -4,13 +4,14 @@ import { openLanding } from "./support/landing";
 test("footer credit preserves links and clears WhatsApp across breakpoints", async ({ page, browserName }) => {
   const runtimeErrors = await openLanding(page);
   const footer = page.getByRole("contentinfo");
-  const signature = footer.getByRole("link", { name: "created by VNT" });
+  const signature = footer.getByRole("link", { name: "Sitio web de VNT Agencia" });
   const brand = footer.getByRole("link", { name: "MAT Pilates, inicio" });
   const instagram = footer.getByRole("link", { name: "Instagram", exact: true });
   const location = footer.getByRole("link", { name: /MAT Pilates.*Canning/i });
   const navigation = footer.getByRole("navigation");
 
-  await expect(signature).toHaveAttribute("href", "https://www.instagram.com/vnt.agencia/");
+  await expect(signature).toHaveAttribute("href", "https://vntagencia.com/r/mat-pilates");
+  await expect(signature).toHaveAttribute("data-vnt-signature", "mat-pilates");
   await expect(signature).toHaveAttribute("target", "_blank");
   await expect(signature).toHaveAttribute("rel", "noopener noreferrer");
   await expect(instagram).toHaveAttribute("href", "https://www.instagram.com/matpilatescn/");
@@ -73,7 +74,7 @@ test("desktop footer keeps both levels usable with enlarged text", async ({ page
   const footer = page.getByRole("contentinfo");
   const navigation = footer.getByRole("navigation");
   const location = footer.getByRole("link", { name: /MAT Pilates.*Canning/i });
-  const signature = footer.getByRole("link", { name: "created by VNT" });
+  const signature = footer.getByRole("link", { name: "Sitio web de VNT Agencia" });
 
   for (const width of [1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -97,7 +98,7 @@ test("footer credit reflows with enlarged mobile text", async ({ page }) => {
   await page.addStyleTag({ content: "footer { font-size: 200%; } footer a, footer p, footer span { font-size: 2rem !important; }" });
   const footer = page.getByRole("contentinfo");
   await footer.scrollIntoViewIfNeeded();
-  const signature = footer.getByRole("link", { name: "created by VNT" });
+  const signature = footer.getByRole("link", { name: "Sitio web de VNT Agencia" });
   const brand = footer.getByRole("link", { name: "MAT Pilates, inicio" });
   const creditBox = (await signature.boundingBox())!;
   const brandBox = (await brand.boundingBox())!;
