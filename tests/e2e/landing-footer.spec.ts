@@ -105,3 +105,68 @@ test("footer credit reflows with enlarged mobile text", async ({ page }) => {
   expect(creditBox.y).toBeGreaterThanOrEqual(brandBox.y + brandBox.height);
   expect(creditBox.x + creditBox.width).toBeLessThanOrEqual(320);
 });
+
+test("footer navigation stays contained at 200% text across breakpoints @cross-browser", async ({ page, browserName }) => {
+  const runtimeErrors = await openLanding(page);
+  await page.evaluate(() => document.fonts.ready);
+  const footer = page.getByRole("contentinfo");
+  const navigation = footer.getByRole("navigation");
+  const links = navigation.getByRole("link");
+  const signature = footer.getByRole("link", { name: "Sitio web de VNT Agencia" });
+
+  for (const width of [320, 390, 768, 1023, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.evaluate(() => document.fonts.ready);
+    await footer.evaluate((element) => {
+      const textElements = Array.from(element.querySelectorAll<HTMLElement>("ul, a, p, span"));
+      const sizes = textElements.map((textElement) => parseFloat(getComputedStyle(textElement).fontSize));
+      textElements.forEach((textElement, index) => {
+        textElement.style.fontSize = `${sizes[index] * 2}px`;
+      });
+    });
+    await footer.scrollIntoViewIfNeeded();
+    const navigationBox = (await navigation.boundingBox())!;
+    const list = navigation.getByRole("list");
+    expect(await list.evaluate((element) => element.scrollWidth - element.clientWidth), `${width}px navigation`).toBeLessThanOrEqual(1);
+    expect(await links.count()).toBe(4);
+
+    const boxes: { x: number; y: number; width: number; height: number }[] = [];
+    for (const link of await links.all()) {
+      await expect(link).toBeVisible();
+      const box = (await link.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(navigationBox.x - 1);
+      expect(box.x + box.width).toBeLessThanOrEqual(navigationBox.x + navigationBox.width + 1);
+      expect(box.y).toBeGreaterThanOrEqual(navigationBox.y - 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(navigationBox.y + navigationBox.height + 1);
+      for (const previous of boxes) {
+        const overlapX = Math.min(previous.x + previous.width, box.x + box.width) - Math.max(previous.x, box.x);
+        const overlapY = Math.min(previous.y + previous.height, box.y + box.height) - Math.max(previous.y, box.y);
+        expect(overlapX <= 0 || overlapY <= 0).toBe(true);
+      }
+      boxes.push(box);
+    }
+
+    await links.first().focus();
+    for (let index = 0; index < 4; index++) {
+      const link = links.nth(index);
+      if (index > 0) {
+        if (browserName === "webkit" && process.platform === "win32") {
+          await link.focus();
+        } else {
+          await page.keyboard.press("Tab");
+        }
+      }
+      await expect(link).toBeFocused();
+      await expect(link).toHaveCSS("outline-style", "solid");
+      const box = (await link.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(6);
+      expect(box.x + box.width + 6).toBeLessThanOrEqual(width);
+    }
+
+    const creditBox = (await signature.boundingBox())!;
+    expect(creditBox.height).toBeGreaterThanOrEqual(44);
+    expect(creditBox.x + creditBox.width).toBeLessThanOrEqual(width);
+  }
+  expect(runtimeErrors).toEqual([]);
+});

@@ -148,6 +148,12 @@ the footer has two levels separated by a subtle inverse border: MAT, wrapping
 navigation, and Instagram above; location and copyright on the left and the VNT
 credit on the right below. Desktop navigation and the location link have 44 px
 targets, and the lower copy wraps when text grows.
+Mobile and Tablet navigation wrap between links when enlarged text needs more
+space, while containers of 300 px or less retain the column layout. Navigation
+line height scales with its text size and preserves the 16 px baseline at the
+normal 12 px Mobile/Tablet and 14 px Desktop sizes. Focused cross-browser coverage
+checks link containment, row separation, keyboard focus and credit containment
+at 200% text size across 320, 390, 768, 1023, 1024 and 1440 px viewports.
 Both links have a minimum 44 px target. Below 1024 px, the credit remains above
 the legal block and its existing floating-WhatsApp clearance.
 
